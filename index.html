@@ -1,123 +1,82 @@
 <!DOCTYPE html>
-<html lang="it">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZOOM MASTER ENGINE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        :root { --blue: #00f2fe; --gold: #ffd700; --bg: #000; }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; position: fixed; width: 100%; }
-
-        /* UI STRUTTURALE */
-        #header { position: absolute; top: 0; width: 100%; display: flex; justify-content: space-between; padding: 25px; z-index: 100; }
-        .bal-box { background: rgba(255,255,255,0.07); padding: 12px 20px; border-radius: 20px; border: 1px solid var(--blue); backdrop-filter: blur(10px); }
+        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
+        #ui { position: absolute; bottom: 50px; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; }
         
-        #canvas-container { position: absolute; width: 100%; height: 60%; top: 0; z-index: 1; }
-
-        /* PANNELLO DI CONTROLLO (Specifica 3) */
-        #bottom-panel { position: absolute; bottom: 0; width: 100%; height: 45%; background: #0a0a0a; border-top: 2px solid #1a1a1a; border-radius: 40px 40px 0 0; z-index: 10; padding: 30px 20px; }
-
-        /* IL TASTO CHE "PENSA" */
-        .master-btn { 
-            width: 100%; height: 100px; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); 
-            border: none; border-radius: 30px; color: #000; font-weight: 900; font-size: 24px; 
-            box-shadow: 0 15px 45px rgba(0, 242, 254, 0.4); text-transform: uppercase;
+        /* IL TASTO FISICO */
+        .btn-impact {
+            width: 80%; height: 80px; background: #00f2fe; border: none; border-radius: 20px;
+            font-size: 20px; font-weight: 900; color: #000; cursor: pointer;
+            box-shadow: 0 10px 0 #008fa0; transition: all 0.05s;
         }
+        .btn-impact:active { transform: translateY(8px); box-shadow: 0 2px 0 #008fa0; }
+        
+        #stats { position: absolute; top: 20px; width: 100%; text-align: center; color: white; font-size: 24px; font-weight: 800; }
     </style>
 </head>
 <body>
 
-    <div id="header">
-        <div style="font-weight: 900; font-size: 22px;">ZOOM<span>.</span></div>
-        <div class="bal-box">🪐 <span id="bal">1100</span></div>
-    </div>
-
-    <div id="canvas-container"></div>
-
-    <div id="bottom-panel">
-        <div id="status-label" style="text-align:center; margin-bottom: 15px; font-weight: 800; color: #444;">LABORATORY READY</div>
-        <button class="master-btn" id="tap-trigger">START CRAFTING</button>
-        
-        <div id="farm-ui" style="display:none; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px;">
-            <div style="background:#111; padding:15px; border-radius:15px; text-align:center;"><span>FARM</span><br><b id="rate-ui">+0</b></div>
-            <div style="background:#111; padding:15px; border-radius:15px; text-align:center;" onclick="location.reload()"><span>BURN</span><br><b style="color:red">15%</b></div>
-            <div style="background:#111; padding:15px; border-radius:15px; text-align:center;"><span>SELL</span><br><b style="color:var(--gold)">LIST</b></div>
-        </div>
+    <div id="stats">🪐 <span id="bal">1100</span> $ZOOM</div>
+    <div id="ui">
+        <div id="label" style="color:#00f2fe; margin-bottom:10px; font-weight:bold;">LAB ATTIVO</div>
+        <button class="btn-impact" id="target">CRAFTING...</button>
     </div>
 
     <script>
-        // CONFIGURAZIONE INIZIALE (Cosa comporta ogni variabile)
-        let balance = 1100; // Il tuo saldo $ZOOM
-        let tapsDone = 0;   // Progressi attuali
-        let reqTaps = 0;    // Sarà deciso dall'RNG
-        let currentRarity = null;
-
-        const rarities = [
-            { name: "BASIC", taps: 25, color: 0x777777, rate: 2 },
-            { name: "RARE", taps: 60, color: 0x00f2fe, r: 15 },
-            { name: "GOLD", taps: 200, color: 0xffd700, r: 100 }
-        ];
-
-        const btn = document.getElementById('tap-trigger');
-
-        // IL PENSIERO DEL TAP
-        function processTap() {
-            if (balance <= 0) return;
-
-            // Se è il primo tap, l'IA sceglie la rarità (Specifica 2)
-            if (tapsDone === 0) {
-                currentRarity = rarities[Math.floor(Math.random() * rarities.length)];
-                reqTaps = currentRarity.taps;
-            }
-
-            balance--;
-            tapsDone++;
-            document.getElementById('bal').innerText = Math.floor(balance);
-            document.getElementById('status-label').innerText = `CONSTRUCTING: ${tapsDone} / ${reqTaps}`;
-
-            // FEEDBACK FISICO (GSAP - Comportamento Impatto)
-            gsap.fromTo(planet.scale, {x: 1.5, y: 1.5, z: 1.5}, {x: 1.2, y: 1.2, z: 1.2, duration: 0.1});
-            planet.rotation.y += 0.5;
-
-            // Controllo completamento
-            if (tapsDone >= reqTaps) finalize();
-        }
-
-        btn.addEventListener('touchstart', (e) => { e.preventDefault(); processTap(); });
-
-        function finalize() {
-            btn.style.display = "none";
-            document.getElementById('farm-ui').style.display = "grid";
-            document.getElementById('status-label').innerText = currentRarity.name + " PLANET READY";
-            
-            // Cambio materiale (Il pianeta si materializza)
-            planet.material.wireframe = false;
-            planet.material.color.setHex(currentRarity.color);
-            gsap.to(planet.scale, {x: 2, y: 2, z: 2, duration: 1, ease: "elastic.out"});
-        }
+        let balance = 1100;
+        let taps = 0;
+        const goal = 20;
 
         // --- MOTORE 3D ---
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight * 0.6);
-        document.getElementById('canvas-container').appendChild(renderer.domElement);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-        const planet = new THREE.Mesh(
-            new THREE.SphereGeometry(1.5, 32, 32),
-            new THREE.MeshPhongMaterial({ color: 0x222222, wireframe: true })
-        );
+        const geo = new THREE.IcosahedronGeometry(1.5, 2);
+        const mat = new THREE.MeshPhongMaterial({ color: 0x333333, wireframe: true });
+        const planet = new THREE.Mesh(geo, mat);
         scene.add(planet);
-        scene.add(new THREE.AmbientLight(0x404040));
-        const light = new THREE.PointLight(0xffffff, 2);
-        light.position.set(5,5,5);
+
+        const light = new THREE.PointLight(0x00f2fe, 2, 100);
+        light.position.set(5, 5, 5);
         scene.add(light);
         camera.position.z = 5;
 
-        function animate() { requestAnimationFrame(animate); planet.rotation.y += 0.005; renderer.render(scene, camera); }
+        // --- LOGICA DI INPUT (Il "Pensiero") ---
+        const btn = document.getElementById('target');
+        
+        function handleInteraction() {
+            if (taps >= goal) return;
+
+            balance--;
+            taps++;
+            document.getElementById('bal').innerText = balance;
+
+            // 1. REAZIONE FISICA DEL PIANETA (Impulso)
+            gsap.to(planet.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 0.1, yoyo: true, repeat: 1, ease: "power2.out" });
+            gsap.to(planet.rotation, { y: planet.rotation.y + 0.5, duration: 0.2 });
+
+            if (taps >= goal) {
+                // 2. PASSAGGIO DI STATO
+                btn.innerText = "COMPLETATO!";
+                btn.style.background = "#ffd700";
+                planet.material.wireframe = false;
+                planet.material.color.setHex(0xffd700);
+                gsap.to(planet.scale, { x: 2, y: 2, z: 2, duration: 1, ease: "elastic.out(1, 0.3)" });
+            }
+        }
+
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); handleInteraction(); });
+        btn.addEventListener('mousedown', handleInteraction);
+
+        function animate() { requestAnimationFrame(animate); planet.rotation.x += 0.005; renderer.render(scene, camera); }
         animate();
     </script>
 </body>
