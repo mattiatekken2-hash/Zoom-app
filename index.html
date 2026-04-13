@@ -1,83 +1,295 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ZOOM MASTER ENGINE V.99</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
-        #ui { position: absolute; bottom: 50px; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; }
+        :root { --neon: #00f2fe; --gold: #ffd700; --epic: #b721ff; --bg: #030303; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg); color: white; overflow: hidden; height: 100vh; position: fixed; width: 100%; }
+
+        /* SCHERMATA VERIFY / MINER */
+        #verify-gate { position: absolute; top:0; left:0; width:100%; height:100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .btn-verify { background: var(--neon); color: #000; font-weight: 900; font-size: 20px; padding: 15px 40px; border: none; border-radius: 10px; box-shadow: 0 0 20px rgba(0, 242, 254, 0.4); text-transform: uppercase; }
+        .btn-verify:active { transform: scale(0.95); }
+
+        /* HEADER & STATS */
+        #header { position: absolute; top: 0; width: 100%; display: flex; justify-content: space-between; padding: 25px 20px; z-index: 100; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
+        .bal-display { background: rgba(20,20,20,0.8); border: 1px solid var(--neon); padding: 12px 25px; border-radius: 30px; font-weight: 900; font-size: 20px; backdrop-filter: blur(10px); pointer-events: auto; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .bal-display span { color: var(--neon); }
+
+        /* 3D RENDER AREA */
+        #canvas-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0; transition: opacity 1s; }
+
+        /* INTERFACCIA DI GIOCO BOTTOM */
+        #game-ui { position: absolute; bottom: 0; width: 100%; height: 45%; background: linear-gradient(180deg, transparent, #050505 20%, #050505 100%); z-index: 10; padding: 30px 20px; display: flex; flex-direction: column; align-items: center; opacity: 0; transform: translateY(50px); transition: all 0.5s; }
         
-        /* IL TASTO FISICO */
-        .btn-impact {
-            width: 80%; height: 80px; background: #00f2fe; border: none; border-radius: 20px;
-            font-size: 20px; font-weight: 900; color: #000; cursor: pointer;
-            box-shadow: 0 10px 0 #008fa0; transition: all 0.05s;
+        .status-text { font-size: 11px; letter-spacing: 3px; color: #666; font-weight: 800; margin-bottom: 20px; text-transform: uppercase; }
+
+        /* TASTO IMPATTO CINETICO */
+        .impact-btn {
+            width: 100%; height: 100px; background: linear-gradient(135deg, #111, #222);
+            border: 2px solid var(--neon); border-radius: 25px; color: var(--neon);
+            font-weight: 900; font-size: 26px; text-shadow: 0 0 10px var(--neon);
+            box-shadow: inset 0 0 20px rgba(0, 242, 254, 0.2), 0 10px 30px rgba(0,0,0,0.8);
+            position: relative; overflow: hidden; transition: 0.05s;
         }
-        .btn-impact:active { transform: translateY(8px); box-shadow: 0 2px 0 #008fa0; }
+        .impact-btn:active { transform: scale(0.96) translateY(4px); box-shadow: inset 0 0 10px rgba(0, 242, 254, 0.5), 0 2px 10px rgba(0,0,0,0.8); background: #0a0a0a; }
         
-        #stats { position: absolute; top: 20px; width: 100%; text-align: center; color: white; font-size: 24px; font-weight: 800; }
-    </style>
+        /* BARRA PROGRESSO FLUIDA */
+        .progress-bar { width: 100%; height: 6px; background: #222; border-radius: 3px; margin-top: 15px; overflow: hidden; }
+        .progress-fill { width: 0%; height: 100%; background: var(--neon); transition: width 0.1s linear; box-shadow: 0 0 10px var(--neon); }
+
+        /* WIDGETS FARM & ALL-IN */
+        #farm-system { display: none; width: 100%; flex-direction: column; gap: 15px; width: 100%; }
+        .widget-row { display: flex; gap: 10px; width: 100%; }
+        .widget { flex: 1; background: #151515; border: 1px solid #333; padding: 15px; border-radius: 18px; text-align: center; }
+        .widget span { display: block; font-size: 10px; color: #777; margin-bottom: 5px; font-weight: bold; }
+        .widget b { font-size: 18px; color: #fff; }
+        
+        .all-in-btn { width: 100%; padding: 15px; background: var(--gold); border: none; border-radius: 15px; color: #000; font-weight: 900; font-size: 16px; box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3); }
+        .all-in-btn:active { transform: scale(0.98); }
+    </script>
 </head>
 <body>
 
-    <div id="stats">🪐 <span id="bal">1100</span> $ZOOM</div>
-    <div id="ui">
-        <div id="label" style="color:#00f2fe; margin-bottom:10px; font-weight:bold;">LAB ATTIVO</div>
-        <button class="btn-impact" id="target">CRAFTING...</button>
+    <div id="verify-gate">
+        <div style="font-size: 40px; margin-bottom: 20px;">🪐</div>
+        <h2 style="margin-bottom: 10px; font-weight: 900;">ZOOM PROTOCOL</h2>
+        <p style="color: #666; font-size: 12px; margin-bottom: 30px; text-align: center; max-width: 80%;">Connessione sicura richiesta. Gli utenti non vedono nulla finché non ottengono il ruolo MINER.</p>
+        <button class="btn-verify" onclick="unlockMinerRole()">VERIFY & ENTER</button>
+    </div>
+
+    <div id="header">
+        <div style="font-weight: 900; font-size: 24px; letter-spacing: -1px;">ZOOM<span style="color:var(--neon)">.</span></div>
+        <div class="bal-display">🪐 <span id="bal">1100</span></div>
+    </div>
+
+    <div id="canvas-wrapper"></div>
+
+    <div id="game-ui">
+        <div class="status-text" id="status-txt">LABORATORY STANDBY</div>
+        
+        <button class="impact-btn" id="core-tapper">FORGE</button>
+        
+        <div class="progress-bar" id="p-bar-container">
+            <div class="progress-fill" id="p-fill"></div>
+        </div>
+
+        <div id="farm-system">
+            <div class="widget-row">
+                <div class="widget"><span>FARMING</span><b id="w-rate" style="color:var(--neon)">+0/H</b></div>
+                <div class="widget" onclick="location.reload()"><span>BURN REC.</span><b style="color:#ff4b2b">15%</b></div>
+            </div>
+            <button class="all-in-btn" onclick="executeAllIn()">⚡ ESEGUI STRATEGIA "ALL-IN"</button>
+        </div>
     </div>
 
     <script>
-        let balance = 1100;
-        let taps = 0;
-        const goal = 20;
+        // --- STATO DEL MOTORE ---
+        let state = {
+            balance: 1100, taps: 0, goal: 0, isMiner: false, 
+            phase: 'idle', // idle -> crafting -> farming
+            tier: null
+        };
 
-        // --- MOTORE 3D ---
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        const dbTiers = [
+            { id: "BASIC", req: 30, color: 0x888888, ui: "#888", rate: 5, chance: 0.60 },
+            { id: "RARE", req: 80, color: 0x00f2fe, ui: "#00f2fe", rate: 25, chance: 0.25 },
+            { id: "EPIC", req: 180, color: 0xb721ff, ui: "#b721ff", rate: 70, chance: 0.10 },
+            { id: "GOLD", req: 400, color: 0xffd700, ui: "#ffd700", rate: 200, chance: 0.05 }
+        ];
 
-        const geo = new THREE.IcosahedronGeometry(1.5, 2);
-        const mat = new THREE.MeshPhongMaterial({ color: 0x333333, wireframe: true });
-        const planet = new THREE.Mesh(geo, mat);
-        scene.add(planet);
-
-        const light = new THREE.PointLight(0x00f2fe, 2, 100);
-        light.position.set(5, 5, 5);
-        scene.add(light);
-        camera.position.z = 5;
-
-        // --- LOGICA DI INPUT (Il "Pensiero") ---
-        const btn = document.getElementById('target');
-        
-        function handleInteraction() {
-            if (taps >= goal) return;
-
-            balance--;
-            taps++;
-            document.getElementById('bal').innerText = balance;
-
-            // 1. REAZIONE FISICA DEL PIANETA (Impulso)
-            gsap.to(planet.scale, { x: 1.5, y: 1.5, z: 1.5, duration: 0.1, yoyo: true, repeat: 1, ease: "power2.out" });
-            gsap.to(planet.rotation, { y: planet.rotation.y + 0.5, duration: 0.2 });
-
-            if (taps >= goal) {
-                // 2. PASSAGGIO DI STATO
-                btn.innerText = "COMPLETATO!";
-                btn.style.background = "#ffd700";
-                planet.material.wireframe = false;
-                planet.material.color.setHex(0xffd700);
-                gsap.to(planet.scale, { x: 2, y: 2, z: 2, duration: 1, ease: "elastic.out(1, 0.3)" });
+        // --- SISTEMA AUDIO SINTETICO (Cruciale per il feeling del video) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playImpactSound(type) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if(type === 'tap') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'success') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.5);
+                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
             }
         }
 
-        btn.addEventListener('touchstart', (e) => { e.preventDefault(); handleInteraction(); });
-        btn.addEventListener('mousedown', handleInteraction);
+        // --- SBLOCCO RUOLO MINER ---
+        function unlockMinerRole() {
+            state.isMiner = true;
+            document.getElementById('verify-gate').style.display = 'none';
+            document.getElementById('header').style.opacity = '1';
+            document.getElementById('canvas-wrapper').style.opacity = '1';
+            document.getElementById('game-ui').style.opacity = '1';
+            document.getElementById('game-ui').style.transform = 'translateY(0)';
+            init3D(); // Avvia il 3D solo dopo il verify per risparmiare risorse
+        }
 
-        function animate() { requestAnimationFrame(animate); planet.rotation.x += 0.005; renderer.render(scene, camera); }
-        animate();
+        // --- LOGICA DI IMPATTO E CRAFTING ---
+        const btnTap = document.getElementById('core-tapper');
+        const balUI = document.getElementById('bal');
+        const fillUI = document.getElementById('p-fill');
+        const statusUI = document.getElementById('status-txt');
+
+        function processCoreImpact() {
+            if (!state.isMiner || state.phase === 'farming' || state.balance <= 0) return;
+
+            // Inizializzazione RNG al primo tocco
+            if (state.phase === 'idle') {
+                state.phase = 'crafting';
+                let rng = Math.random(); let cum = 0;
+                for(let t of dbTiers) { cum += t.chance; if(rng <= cum) { state.tier = t; break; } }
+                state.goal = state.tier.req;
+            }
+
+            // Calcoli
+            state.balance--;
+            state.taps++;
+            balUI.innerText = state.balance;
+            
+            // Aggiornamento UI Dinamico
+            let percent = (state.taps / state.goal) * 100;
+            fillUI.style.width = percent + "%";
+            statusUI.innerText = `FORGING DATA: ${state.taps} / ${state.goal} TB`;
+
+            // FEEDBACK FISICO REALE E VIRTUALE
+            playImpactSound('tap');
+            if (navigator.vibrate) navigator.vibrate(15); // Haptic feedback su mobile
+            
+            // GSAP 3D Impact
+            gsap.fromTo(planet.scale, {x: 1.3, y: 1.3, z: 1.3}, {x: 1, y: 1, z: 1, duration: 0.15, ease: "power2.out"});
+            planet.rotation.y += 0.3;
+            planet.rotation.z += 0.1;
+
+            spawnParticles(); // Genera scintille al tocco
+
+            if (state.taps >= state.goal) triggerEvolution();
+        }
+
+        btnTap.addEventListener('pointerdown', (e) => { e.preventDefault(); processCoreImpact(); });
+
+        function triggerEvolution() {
+            state.phase = 'farming';
+            playImpactSound('success');
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+
+            // Transizione UI
+            btnTap.style.display = "none";
+            document.getElementById('p-bar-container').style.display = "none";
+            document.getElementById('farm-system').style.display = "flex";
+            
+            statusUI.innerText = `[ ${state.tier.id} MINER ONLINE ]`;
+            statusUI.style.color = state.tier.ui;
+            document.getElementById('w-rate').innerText = `+${state.tier.rate}/H`;
+
+            // Transizione 3D Materiale
+            planet.material.wireframe = false;
+            planet.material.color.setHex(state.tier.color);
+            planet.material.emissive.setHex(state.tier.color);
+            planet.material.emissiveIntensity = 0.5;
+            
+            gsap.to(planet.scale, {x: 1.8, y: 1.8, z: 1.8, duration: 1.5, ease: "elastic.out(1, 0.4)"});
+            gsap.to(camera.position, {z: 6, duration: 1}); // Effetto camera pull-back
+
+            // Avvio Loop Economia
+            setInterval(() => {
+                state.balance += (state.tier.rate / 100);
+                balUI.innerText = Math.floor(state.balance);
+            }, 1000);
+        }
+
+        function executeAllIn() {
+            if(confirm("STRATEGIA ALL-IN: Rischio il 100% del saldo per tentare di raddoppiare. Procedere?")) {
+                let win = Math.random() > 0.55; // 45% di vincere
+                if(win) {
+                    state.balance *= 2;
+                    alert("ALL-IN VINTO! Saldo Raddoppiato.");
+                } else {
+                    state.balance = 0;
+                    alert("ALL-IN PERSO. Saldo azzerato.");
+                }
+                balUI.innerText = Math.floor(state.balance);
+            }
+        }
+
+        // --- MOTORE GRAFICO THREE.JS (Avviato dopo il Verify) ---
+        let scene, camera, renderer, planet, particleSystem;
+        
+        function init3D() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / (window.innerHeight * 0.6), 0.1, 100);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight * 0.6);
+            document.getElementById('canvas-wrapper').appendChild(renderer.domElement);
+
+            // Luci Avanzate
+            const ambient = new THREE.AmbientLight(0x222222);
+            const directional = new THREE.DirectionalLight(0xffffff, 1.5);
+            directional.position.set(5, 5, 2);
+            scene.add(ambient, directional);
+
+            // Mesh Pianeta (Materiale Standard per riflessi)
+            const geo = new THREE.IcosahedronGeometry(1.2, 4); // Più dettagliato
+            const mat = new THREE.MeshStandardMaterial({ 
+                color: 0x444444, wireframe: true, 
+                metalness: 0.8, roughness: 0.2 
+            });
+            planet = new THREE.Mesh(geo, mat);
+            scene.add(planet);
+
+            // Setup Particelle
+            const pGeo = new THREE.BufferGeometry();
+            const pMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.05, transparent: true, opacity: 0.8 });
+            particleSystem = new THREE.Points(pGeo, pMat);
+            scene.add(particleSystem);
+
+            camera.position.z = 5;
+            animate3D();
+        }
+
+        let particlesData = [];
+        function spawnParticles() {
+            for(let i=0; i<10; i++) {
+                particlesData.push({
+                    x: 0, y: 0, z: 0,
+                    vx: (Math.random()-0.5)*0.2, vy: (Math.random()-0.5)*0.2, vz: (Math.random()-0.5)*0.2,
+                    life: 1.0
+                });
+            }
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            if(state.phase === 'farming') {
+                planet.rotation.y += 0.002; // Rotazione lenta da farm
+            }
+
+            // Aggiornamento Particelle
+            if(particlesData.length > 0) {
+                let positions = [];
+                for(let i=particlesData.length-1; i>=0; i--) {
+                    let p = particlesData[i];
+                    p.x += p.vx; p.y += p.vy; p.z += p.vz; p.life -= 0.02;
+                    if(p.life <= 0) { particlesData.splice(i, 1); } 
+                    else { positions.push(p.x, p.y, p.z); }
+                }
+                particleSystem.geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            }
+            renderer.render(scene, camera);
+        }
     </script>
 </body>
 </html>
