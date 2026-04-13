@@ -3,145 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZOOM MASTER V.29</title>
+    <title>ZOOM MASTER V.30</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        :root { --blue: #3498db; --gold: #ffd700; --epic: #a335ee; --rare: #0070dd; --bg: #000; --panel: #0a0a0a; --green: #2ecc71; --red: #e74c3c; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, system-ui, sans-serif; }
-        body { background: var(--bg); color: white; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        :root { --blue: #4facfe; --gold: #f9d423; --epic: #b721ff; --rare: #21d4fd; --bg: #050505; --panel: #121212; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        body { background: var(--bg); color: white; overflow: hidden; height: 100vh; }
 
-        #header { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-between; padding: 20px; z-index: 100; align-items: center; }
-        .balance-box { background: rgba(255,255,255,0.08); padding: 8px 15px; border-radius: 15px; border: 1px solid var(--blue); }
+        /* TOP BAR */
+        #top-bar { display: flex; justify-content: space-between; padding: 20px; align-items: center; z-index: 100; position: relative; }
+        .stat-badge { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-weight: 700; backdrop-filter: blur(15px); }
+        .stat-badge i { color: var(--gold); }
 
-        #viewport { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #canvas-container { position: absolute; width: 100%; height: 100%; top: 0; z-index: -1; }
+        /* LIVE ACTIVITY FEED (FOMO) */
+        #activity-feed { height: 30px; overflow: hidden; font-size: 11px; text-align: center; color: #666; margin-top: -10px; }
 
-        #ui-center { text-align: center; z-index: 10; margin-top: 220px; }
-        .progress-text { font-size: 12px; color: var(--blue); margin-bottom: 5px; font-weight: bold; letter-spacing: 1px; }
+        /* 3D VIEWPORT */
+        #viewport { height: 50vh; position: relative; display: flex; align-items: center; justify-content: center; }
+        #canvas-container { position: absolute; width: 100%; height: 100%; }
+
+        /* INTERACTION PANEL */
+        #main-panel { background: var(--panel); border-radius: 40px 40px 0 0; flex: 1; padding: 30px 20px; position: relative; border-top: 1px solid rgba(255,255,255,0.05); }
+        .planet-title { font-size: 24px; font-weight: 900; text-align: center; margin-bottom: 20px; letter-spacing: -0.5px; }
         
-        #farm-widgets { display: none; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 90%; margin-top: 250px; z-index: 10; }
-        .widget { background: var(--panel); padding: 12px; border-radius: 15px; border: 1px solid #222; text-align: center; }
-        .widget span { display: block; font-size: 10px; color: #666; margin-bottom: 5px; }
-        .btn-action { margin-top: 8px; padding: 5px; border-radius: 8px; border: none; font-size: 10px; font-weight: bold; width: 100%; }
+        /* BOTTONE TAP */
+        .tap-zone { width: 100%; height: 120px; border-radius: 25px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); display: flex; align-items: center; justify-content: center; flex-direction: column; color: #000; font-weight: 900; font-size: 22px; box-shadow: 0 15px 40px rgba(79, 172, 254, 0.3); border: none; transition: 0.1s; cursor: pointer; }
+        .tap-zone:active { transform: scale(0.96); box-shadow: 0 5px 20px rgba(79, 172, 254, 0.2); }
+        .tap-sub { font-size: 12px; opacity: 0.7; font-weight: 500; margin-top: 5px; }
 
-        .btn-craft { background: var(--blue); color: #000; border: none; padding: 20px 50px; border-radius: 50px; font-weight: 900; font-size: 18px; box-shadow: 0 5px 20px rgba(52,152,219,0.4); }
-        
-        #nav-bottom { position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px 0 35px; background: var(--panel); border-radius: 30px 30px 0 0; z-index: 100; }
-        .nav-link { display: flex; flex-direction: column; align-items: center; color: #444; font-size: 10px; }
+        /* FLIP BUTTON */
+        #flip-btn { position: absolute; top: -25px; right: 30px; background: var(--gold); color: #000; padding: 12px 25px; border-radius: 30px; font-weight: 800; font-size: 13px; border: none; box-shadow: 0 5px 15px rgba(249, 212, 35, 0.4); }
+
+        /* NAV BAR */
+        #nav { position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 20px 0 35px; background: rgba(18,18,18,0.95); backdrop-filter: blur(20px); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #555; text-decoration: none; font-size: 10px; font-weight: 700; }
+        .nav-item.active { color: white; }
+        .nav-icon { font-size: 22px; }
     </style>
 </head>
 <body>
 
-    <div id="header">
-        <div style="font-weight: 800; letter-spacing: 1px;">🪐 ZOOM<span>FORGE</span></div>
-        <div class="balance-box">⚡ <span id="bal">1000</span> $ZOOM</div>
+    <div id="top-bar">
+        <div style="font-weight: 900; font-size: 20px;">ZOOM<span>.</span></div>
+        <div class="stat-badge"><i>⚡</i> <span id="bal">1100</span> $ZOOM</div>
+        <div class="stat-badge"><i>💎</i> 0.00</div>
+    </div>
+
+    <div id="activity-feed">
+        <div id="feed-msg">🚀 oxy crafted a RARE planet!</div>
     </div>
 
     <div id="viewport">
         <div id="canvas-container"></div>
+    </div>
 
-        <div id="ui-center">
-            <div id="progress-info" class="progress-text">READY TO FORGE</div>
-            <div id="rarity-tag" style="font-weight: 900; font-size: 24px; margin-bottom: 10px;"></div>
-            <button class="btn-craft" id="main-btn" onclick="handleTap()">⚒️ START CRAFTING</button>
-        </div>
+    <div id="main-panel">
+        <button id="flip-btn" onclick="startFlip()">⚡ ALL-IN FLIP</button>
+        <div class="planet-title" id="status-txt">Planet Lab</div>
+        
+        <button class="tap-zone" onclick="handleTap()">
+            TAP TO CRAFT
+            <div class="tap-sub" id="progress-txt">0 / 30 Taps</div>
+        </button>
 
-        <div id="farm-widgets">
-            <div class="widget"><span>FARM /H</span><b id="farm-rate">0</b></div>
-            <div class="widget"><span>BURN</span><button class="btn-action" style="color:var(--red)" onclick="location.reload()">15%</button></div>
-            <div class="widget"><span>MARKET</span><button class="btn-action" style="color:var(--green)">SELL</button></div>
+        <div id="farm-widgets" style="display:none; margin-top: 20px; display: flex; gap: 10px; justify-content: space-between;">
+             <div style="background:#1a1a1a; padding:15px; border-radius:15px; flex:1; text-align:center;">
+                <span style="display:block; font-size:10px; color:#555;">FARM RATE</span>
+                <b id="rate-val" style="color:var(--blue)">+2 /h</b>
+             </div>
+             <div style="background:#1a1a1a; padding:15px; border-radius:15px; flex:1; text-align:center;">
+                <span style="display:block; font-size:10px; color:#555;">BURN VALUE</span>
+                <b style="color:#ff4b2b">+15%</b>
+             </div>
         </div>
     </div>
 
-    <nav id="nav-bottom">
-        <div class="nav-link" style="color:white"><i>⚒️</i>LAB</div>
-        <div class="nav-link"><i>🪐</i>PLANETS</div>
-        <div class="nav-link"><i>💎</i>SHOP</div>
-        <div class="nav-link"><i>🏆</i>RANKS</div>
+    <nav id="nav">
+        <a class="nav-item active"><span class="nav-icon">⚒️</span>Lab</a>
+        <a class="nav-item"><span class="nav-icon">🪐</span>Planets</a>
+        <a class="nav-item"><span class="nav-icon">💎</span>Shop</a>
+        <a class="nav-item"><span class="nav-icon">🏆</span>Ranks</a>
     </nav>
 
     <script>
-        let balance = 1000;
-        let tapsDone = 0;
-        let requiredTaps = 0;
-        let currentRarity = null;
-        let farmRate = 0;
-
-        // 1. Definiamo i costi e rendimenti per rarità
-        const rarityConfig = [
-            { name: "BASIC", chance: 0.60, taps: 20, rate: 2, color: 0x777777 },
-            { name: "RARE", chance: 0.25, taps: 50, rate: 10, color: 0x0070dd },
-            { name: "EPIC", chance: 0.10, taps: 100, rate: 25, color: 0xa335ee },
-            { name: "GOLD", chance: 0.05, taps: 250, rate: 100, color: 0xffd700 }
-        ];
-
-        // 2. Il sistema sceglie la rarità all'inizio del primo tap
-        function initRarity() {
-            const rng = Math.random();
-            let cumulative = 0;
-            for (let config of rarityConfig) {
-                cumulative += config.chance;
-                if (rng <= cumulative) {
-                    currentRarity = config;
-                    requiredTaps = config.taps;
-                    break;
-                }
-            }
-        }
+        let balance = 1100;
+        let taps = 0;
+        let reqTaps = 30;
+        let isCrafted = false;
 
         function handleTap() {
-            if (balance <= 0) return;
-            if (!currentRarity) initRarity();
+            if(balance < 1 || isCrafted) return;
+            balance -= 1;
+            taps += 1;
+            updateUI();
             
-            balance--;
-            tapsDone++;
-            document.getElementById('bal').innerText = balance;
-            
-            // Aggiorna UI Progress
-            document.getElementById('progress-info').innerText = `FORGING: ${tapsDone} / ${requiredTaps}`;
-            
-            // Animazione 3D progressiva
-            let scale = 1 + (tapsDone / requiredTaps) * 1.2;
-            planet.scale.set(scale, scale, scale);
-            planet.rotation.y += 0.2;
+            // Animazione 3D
+            planet.scale.set(1 + (taps/reqTaps), 1 + (taps/reqTaps), 1 + (taps/reqTaps));
+            planet.rotation.y += 0.3;
 
-            if (tapsDone >= requiredTaps) {
-                finalizePlanet();
+            if(taps >= reqTaps) revealPlanet();
+        }
+
+        function revealPlanet() {
+            isCrafted = true;
+            document.getElementById('status-txt').innerText = "RARE PLANET";
+            document.getElementById('status-txt').style.color = "var(--rare)";
+            document.getElementById('farm-widgets').style.display = "flex";
+            planet.material.color.setHex(0x21d4fd);
+            planet.material.wireframe = false;
+        }
+
+        function updateUI() {
+            document.getElementById('bal').innerText = Math.floor(balance);
+            document.getElementById('progress-txt').innerText = `${taps} / ${reqTaps} Taps`;
+        }
+
+        function startFlip() {
+            if(confirm("Vuoi puntare tutto (All-In) sul prossimo lancio?")) {
+                let win = Math.random() > 0.5;
+                balance = win ? balance * 2 : 0;
+                alert(win ? "HAI VINTO!" : "HAI PERSO TUTTO!");
+                updateUI();
             }
         }
 
-        function finalizePlanet() {
-            document.getElementById('ui-center').style.display = "none";
-            document.getElementById('farm-widgets').style.display = "grid";
-            
-            document.getElementById('rarity-tag').innerText = currentRarity.name;
-            document.getElementById('rarity-tag').style.color = '#' + currentRarity.color.toString(16);
-            document.getElementById('farm-rate').innerText = "+" + currentRarity.rate;
-            
-            planet.material.color.setHex(currentRarity.color);
-            planet.material.wireframe = false;
-            
-            // Start real-time farming
-            setInterval(() => {
-                balance += (currentRarity.rate / 3600);
-                document.getElementById('bal').innerText = Math.floor(balance);
-            }, 1000);
-        }
-
-        // --- ENGINE 3D ---
+        // --- 3D ENGINE (HIGH QUALITY) ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / (window.innerHeight*0.5), 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(window.innerWidth, window.innerHeight * 0.5);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        const light = new THREE.PointLight(0xffffff, 1.5);
+        const light = new THREE.PointLight(0xffffff, 2, 100);
         light.position.set(5, 5, 5);
         scene.add(light);
-        scene.add(new THREE.AmbientLight(0x222222));
+        scene.add(new THREE.AmbientLight(0x202020));
 
-        const geometry = new THREE.IcosahedronGeometry(1.2, 3);
-        const material = new THREE.MeshPhongMaterial({ color: 0x333333, wireframe: true });
+        const geometry = new THREE.SphereGeometry(1.5, 64, 64);
+        const material = new THREE.MeshPhongMaterial({ color: 0x333333, wireframe: true, shininess: 100 });
         const planet = new THREE.Mesh(geometry, material);
         scene.add(planet);
 
