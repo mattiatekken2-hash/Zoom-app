@@ -2,113 +2,81 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZOOM MASTER V.29</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ZOOMFORGE MASTER</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        :root { --main: #00ffcc; --gold: #ffd700; --panel: rgba(10, 10, 10, 0.95); }
-        body { margin: 0; background: #000; color: white; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; user-select: none; }
-        
-        /* HEADER STATS */
-        #header { position: absolute; top: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px 0; z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); }
-        .stat { background: rgba(255,255,255,0.05); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--main); font-weight: bold; font-size: 14px; backdrop-filter: blur(10px); }
+        :root { --main-color: #3498db; --bg-dark: #000000; --stat-panel: #111111; --btn-blue: #3498db; --text-light: #ffffff; --text-dark: #999999; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--bg-dark); color: var(--text-light); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
 
-        /* SEASON CIRCLE */
-        #season-box { position: absolute; top: 70px; right: 20px; text-align: center; z-index: 10; }
-        .c-bar { width: 45px; height: 45px; border: 3px solid #222; border-top: 3px solid var(--main); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; }
+        /* HEADER (ZOOMFORGE | BALANCE) */
+        #header { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; z-index: 10; position: fixed; top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); }
+        .logo { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 20px; letter-spacing: 1px; }
+        .logo span { color: var(--main-color); }
+        .balance { background: rgba(255,255,255,0.05); padding: 8px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 5px; color: var(--text-light); }
+        .balance i { color: var(--main-color); }
 
-        /* LIVE FEED (FOMO) */
-        #feed { position: absolute; bottom: 140px; width: 100%; text-align: center; color: var(--main); font-size: 11px; font-weight: 300; text-transform: uppercase; letter-spacing: 1px; z-index: 5; }
+        /* AREA CENTRALE 3D E TESTO */
+        #container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 1; padding-top: 70px; padding-bottom: 90px; }
+        #canvas-container { width: 100vw; height: 100%; position: absolute; top: 0; z-index: -1; }
+        #status-area { text-align: center; margin-top: 150px; }
+        #main-status { font-weight: 700; font-size: 26px; margin-bottom: 10px; }
+        #sub-status { font-size: 14px; color: var(--text-dark); max-width: 250px; margin: 0 auto 30px auto; }
+        .btn-blue { background: var(--btn-blue); color: #000; border: none; padding: 18px 50px; border-radius: 40px; font-weight: 900; font-size: 18px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(52,152,219,0.3); }
 
-        /* MAIN 3D CONTAINER */
-        #canvas-container { width: 100vw; height: 100vh; position: fixed; top: 0; }
-
-        /* CONTROLS */
-        #footer { position: absolute; bottom: 30px; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; gap: 10px; }
-        .btn-main { background: var(--main); color: #000; border: none; padding: 18px 60px; border-radius: 40px; font-weight: 900; font-size: 20px; box-shadow: 0 0 30px rgba(0,255,204,0.4); text-transform: uppercase; }
-        .btn-main:active { transform: scale(0.92); }
-
-        /* MODALS (SHOP, FLIP) */
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 88%; background: var(--panel); border: 1px solid var(--main); border-radius: 24px; padding: 20px; z-index: 100; box-shadow: 0 0 50px rgba(0,0,0,1); }
-        .active { display: block; animation: zoomIn 0.2s ease-out; }
-        @keyframes zoomIn { from { opacity: 0; transform: translate(-50%, -40%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
-        
-        .wallet-card { background: #000; border: 1px dashed var(--main); padding: 12px; margin: 15px 0; border-radius: 12px; font-size: 10px; word-break: break-all; }
-        .btn-sec { background: transparent; border: 1px solid #444; color: white; padding: 10px 20px; border-radius: 12px; margin: 5px; font-size: 14px; }
+        /* BOTTOM NAVIGATION BAR (UI) */
+        #nav { position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; align-items: center; padding: 15px 0 25px 0; background: var(--stat-panel); border-top: 1px solid rgba(255,255,255,0.05); z-index: 10; border-radius: 20px 20px 0 0; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dark); text-decoration: none; position: relative; padding: 5px; }
+        .nav-item i { font-size: 20px; margin-bottom: 2px; }
+        .nav-item.active { color: var(--text-light); }
+        .nav-item.active::after { content: ''; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 20px; height: 2px; background: var(--main-color); }
+        .nav-icon { font-size: 22px; margin-bottom: 4px; }
     </style>
 </head>
 <body>
 
     <div id="header">
-        <div class="stat" onclick="openM('shop-m')">🛒 SHOP</div>
-        <div class="stat">🪐 <span id="bal">1000</span> $ZOOM</div>
-        <div class="stat" onclick="openM('flip-m')">🎲 FLIP</div>
+        <div class="logo">🪐 <span>ZOOM</span>FORGE</div>
+        <div class="balance">
+            <i>⚡</i> <span id="zoom-balance">1</span> $ZOOM
+        </div>
     </div>
 
-    <div id="season-box">
-        <div class="c-bar">S1/6</div>
-        <div style="font-size: 8px; margin-top: 4px;">SEASON</div>
+    <div id="container">
+        <div id="canvas-container"></div>
+        
+        <div id="status-area">
+            <p id="main-status">Ready to Craft</p>
+            <p id="sub-status">Tap the button to start forging your planet</p>
+            
+            <p style="font-size:12px; color:var(--text-dark); margin-bottom:10px;">⚡ Min. 1 $ZOOM per tap</p>
+            
+            <button class="btn-blue" onclick="handleTap()">
+                ⚒️ Start Crafting
+            </button>
+        }
     </div>
 
-    <div id="canvas-container"></div>
-
-    <div id="feed">CARICAMENTO DATI LIVE...</div>
-
-    <div id="footer">
-        <button class="btn-main" onclick="tap()">TAP TO CRAFT</button>
-        <div style="font-size: 10px; color: #555;">ZOOM PROTOCOL V.29</div>
-    </div>
-
-    <div id="shop-m" class="modal">
-        <h2 style="margin:0; color:var(--main)">ZOOM SHOP</h2>
-        <p style="font-size:14px;">Acquista <b>IL SOLE</b> (10 TON)<br><small>Rendimento Max + Unicità</small></p>
-        <div class="wallet-card">UQCbU2lE4-xTcX2cjX75Uq4LQskpL-Xm71yLrA58QxytkgzS</div>
-        <button class="btn-sec" style="border-color:var(--main)" onclick="copyW()">COPY ADDRESS</button>
-        <p style="font-size:10px; color:#ff4444;">⚠️ INVIA SOLO TON (RETE TON)</p>
-        <button class="btn-sec" onclick="closeM()">CHIUDI</button>
-    </div>
-
-    <div id="flip-m" class="modal">
-        <h2 style="margin:0;">COIN FLIP</h2>
-        <p>Scommetti 500 $ZOOM</p>
-        <div id="coin-res" style="font-size:40px; margin:20px;">🪐</div>
-        <button class="btn-main" style="font-size:14px; padding:12px 30px;" onclick="runFlip()">SCOMMETTI</button><br><br>
-        <button class="btn-sec" onclick="closeM()">CHIUDI</button>
+    <div id="nav">
+        <div class="nav-item active"><span class="nav-icon">⚒️</span>Lab</div>
+        <div class="nav-item"><span class="nav-icon">🪐</span>Planets</div>
+        <div class="nav-item"><span class="nav-icon">💎</span>Shop</div>
+        <div class="nav-item"><span class="nav-icon">🌾</span>Farm</div>
+        <div class="nav-item"><span class="nav-icon">🏆</span>Ranks</div>
     </div>
 
     <script>
-        let balance = 1000;
-        const messages = ["• IL SOLE ACQUISTATO (18/20) •", "• NUOVO GOLD PIANETA GENERATO •", "• UTENTE X HA VINTO IL FLIP •", "• WEALTH RANK AGGIORNATO •"];
-        
-        function tap() {
-            if(balance <= 0) return;
-            balance--;
-            document.getElementById('bal').innerText = balance;
-            planet.scale.set(1.1, 1.1, 1.1);
-            setTimeout(() => planet.scale.set(1, 1, 1), 100);
+        let zoomBalance = 1;
+
+        function handleTap() {
+            if(zoomBalance <= 0) return;
+            zoomBalance--; // Meccanica MASTER V.29 (1 tap = 1 ZOOM)
+            document.getElementById('zoom-balance').innerText = zoomBalance;
+            // Aggiungi logica Crafting V.29 (materializzazione pianeta) qui
         }
 
-        function openM(id) { document.getElementById(id).classList.add('active'); }
-        function closeM() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); }
-        function copyW() { navigator.clipboard.writeText("UQCbU2lE4-xTcX2cjX75Uq4LQskpL-Xm71yLrA58QxytkgzS"); alert("Copiato!"); }
-
-        function runFlip() {
-            if(balance < 500) return;
-            balance -= 500;
-            const win = Math.random() < 0.45;
-            document.getElementById('coin-res').innerText = "🌀";
-            setTimeout(() => {
-                if(win) { balance += 1000; document.getElementById('coin-res').innerText = "💎"; alert("VINTO!"); }
-                else { document.getElementById('coin-res').innerText = "💀"; alert("PERSO!"); }
-                document.getElementById('bal').innerText = balance;
-            }, 800);
-        }
-
-        setInterval(() => {
-            document.getElementById('feed').innerText = messages[Math.floor(Math.random()*messages.length)];
-        }, 4000);
-
-        // ENGINE 3D OTTIMIZZATO
+        // --- ENGINE 3D OTTIMIZZATO (Effetto Pulsazione) ---
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -117,25 +85,59 @@
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
         // Luci
-        const light = new THREE.DirectionalLight(0xffffff, 1);
+        const light = new THREE.DirectionalLight(0xffffff, 1.2);
         light.position.set(5, 5, 5);
         scene.add(light);
-        scene.add(new THREE.AmbientLight(0x404040));
+        scene.add(new THREE.AmbientLight(0x333333));
 
-        // Pianeta
-        const geometry = new THREE.IcosahedronGeometry(1.5, 3); // Più leggero per mobile
-        const material = new THREE.MeshPhongMaterial({ color: 0x00ffcc, wireframe: true, emissive: 0x002211 });
+        // Pianeta (Sfera solida, non griglia)
+        const geometry = new THREE.SphereGeometry(1.5, 64, 64);
+        const material = new THREE.MeshPhongMaterial({ 
+            color: 0x3498db, 
+            emissive: 0x000000,
+            shininess: 80,
+            flatShading: false
+        });
         const planet = new THREE.Mesh(geometry, material);
         scene.add(planet);
 
+        // Aggiungiamo stelle/particelle (Effetto screenshot)
+        const starQty = 600;
+        const starGeom = new THREE.BufferGeometry();
+        const starPos = new Float32Array(starQty * 3);
+        for(let i=0; i<starQty*3; i++) { starPos[i] = (Math.random() - 0.5) * 80; }
+        starGeom.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1, transparent: true, opacity: 0.7 });
+        const stars = new THREE.Points(starGeom, starMat);
+        scene.add(stars);
+
         camera.position.z = 4;
+
+        // Logica Pulsazione
+        let startTime = Date.now();
 
         function animate() {
             requestAnimationFrame(animate);
-            planet.rotation.y += 0.005;
+            let time = (Date.now() - startTime) * 0.001;
+            
+            // Effetto Pulsazione: la scala oscilla tra 0.95 e 1.05
+            let pulseScale = 1 + 0.05 * Math.sin(time * 2);
+            planet.scale.set(pulseScale, pulseScale, pulseScale);
+            
+            planet.rotation.y += 0.004; // Rotazione lenta
+            stars.rotation.y -= 0.0002; // Stelle ruotano piano
+
             renderer.render(scene, camera);
         }
         animate();
+
+        // Safe Area per Telegram
+        function adjustSafeArea() {
+            const h = window.visualViewport.height;
+            document.body.style.height = `${h}px`;
+        }
+        window.visualViewport.addEventListener('resize', adjustSafeArea);
+        adjustSafeArea();
     </script>
 </body>
 </html>
