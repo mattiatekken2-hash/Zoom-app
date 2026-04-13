@@ -3,141 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZOOMFORGE MASTER</title>
+    <title>ZOOM MASTER V.29</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        :root { --main-color: #3498db; --bg-dark: #000000; --stat-panel: #111111; --btn-blue: #3498db; --text-light: #ffffff; --text-dark: #999999; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg-dark); color: var(--text-light); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        :root { --blue: #3498db; --gold: #ffd700; --epic: #a335ee; --rare: #0070dd; --bg: #000; --panel: #0a0a0a; --green: #2ecc71; --red: #e74c3c; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, system-ui, sans-serif; }
+        body { background: var(--bg); color: white; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
 
-        /* HEADER (ZOOMFORGE | BALANCE) */
-        #header { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; z-index: 10; position: fixed; top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); }
-        .logo { display: flex; align-items: center; gap: 8px; font-weight: 900; font-size: 20px; letter-spacing: 1px; }
-        .logo span { color: var(--main-color); }
-        .balance { background: rgba(255,255,255,0.05); padding: 8px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 5px; color: var(--text-light); }
-        .balance i { color: var(--main-color); }
+        #header { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-between; padding: 20px; z-index: 100; align-items: center; }
+        .balance-box { background: rgba(255,255,255,0.08); padding: 8px 15px; border-radius: 15px; border: 1px solid var(--blue); }
 
-        /* AREA CENTRALE 3D E TESTO */
-        #container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 1; padding-top: 70px; padding-bottom: 90px; }
-        #canvas-container { width: 100vw; height: 100%; position: absolute; top: 0; z-index: -1; }
-        #status-area { text-align: center; margin-top: 150px; }
-        #main-status { font-weight: 700; font-size: 26px; margin-bottom: 10px; }
-        #sub-status { font-size: 14px; color: var(--text-dark); max-width: 250px; margin: 0 auto 30px auto; }
-        .btn-blue { background: var(--btn-blue); color: #000; border: none; padding: 18px 50px; border-radius: 40px; font-weight: 900; font-size: 18px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(52,152,219,0.3); }
+        #viewport { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #canvas-container { position: absolute; width: 100%; height: 100%; top: 0; z-index: -1; }
 
-        /* BOTTOM NAVIGATION BAR (UI) */
-        #nav { position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; align-items: center; padding: 15px 0 25px 0; background: var(--stat-panel); border-top: 1px solid rgba(255,255,255,0.05); z-index: 10; border-radius: 20px 20px 0 0; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dark); text-decoration: none; position: relative; padding: 5px; }
-        .nav-item i { font-size: 20px; margin-bottom: 2px; }
-        .nav-item.active { color: var(--text-light); }
-        .nav-item.active::after { content: ''; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 20px; height: 2px; background: var(--main-color); }
-        .nav-icon { font-size: 22px; margin-bottom: 4px; }
+        #ui-center { text-align: center; z-index: 10; margin-top: 220px; }
+        .progress-text { font-size: 12px; color: var(--blue); margin-bottom: 5px; font-weight: bold; letter-spacing: 1px; }
+        
+        #farm-widgets { display: none; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 90%; margin-top: 250px; z-index: 10; }
+        .widget { background: var(--panel); padding: 12px; border-radius: 15px; border: 1px solid #222; text-align: center; }
+        .widget span { display: block; font-size: 10px; color: #666; margin-bottom: 5px; }
+        .btn-action { margin-top: 8px; padding: 5px; border-radius: 8px; border: none; font-size: 10px; font-weight: bold; width: 100%; }
+
+        .btn-craft { background: var(--blue); color: #000; border: none; padding: 20px 50px; border-radius: 50px; font-weight: 900; font-size: 18px; box-shadow: 0 5px 20px rgba(52,152,219,0.4); }
+        
+        #nav-bottom { position: fixed; bottom: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px 0 35px; background: var(--panel); border-radius: 30px 30px 0 0; z-index: 100; }
+        .nav-link { display: flex; flex-direction: column; align-items: center; color: #444; font-size: 10px; }
     </style>
 </head>
 <body>
 
     <div id="header">
-        <div class="logo">🪐 <span>ZOOM</span>FORGE</div>
-        <div class="balance">
-            <i>⚡</i> <span id="zoom-balance">1</span> $ZOOM
+        <div style="font-weight: 800; letter-spacing: 1px;">🪐 ZOOM<span>FORGE</span></div>
+        <div class="balance-box">⚡ <span id="bal">1000</span> $ZOOM</div>
+    </div>
+
+    <div id="viewport">
+        <div id="canvas-container"></div>
+
+        <div id="ui-center">
+            <div id="progress-info" class="progress-text">READY TO FORGE</div>
+            <div id="rarity-tag" style="font-weight: 900; font-size: 24px; margin-bottom: 10px;"></div>
+            <button class="btn-craft" id="main-btn" onclick="handleTap()">⚒️ START CRAFTING</button>
+        </div>
+
+        <div id="farm-widgets">
+            <div class="widget"><span>FARM /H</span><b id="farm-rate">0</b></div>
+            <div class="widget"><span>BURN</span><button class="btn-action" style="color:var(--red)" onclick="location.reload()">15%</button></div>
+            <div class="widget"><span>MARKET</span><button class="btn-action" style="color:var(--green)">SELL</button></div>
         </div>
     </div>
 
-    <div id="container">
-        <div id="canvas-container"></div>
-        
-        <div id="status-area">
-            <p id="main-status">Ready to Craft</p>
-            <p id="sub-status">Tap the button to start forging your planet</p>
-            
-            <p style="font-size:12px; color:var(--text-dark); margin-bottom:10px;">⚡ Min. 1 $ZOOM per tap</p>
-            
-            <button class="btn-blue" onclick="handleTap()">
-                ⚒️ Start Crafting
-            </button>
-        }
-    </div>
-
-    <div id="nav">
-        <div class="nav-item active"><span class="nav-icon">⚒️</span>Lab</div>
-        <div class="nav-item"><span class="nav-icon">🪐</span>Planets</div>
-        <div class="nav-item"><span class="nav-icon">💎</span>Shop</div>
-        <div class="nav-item"><span class="nav-icon">🌾</span>Farm</div>
-        <div class="nav-item"><span class="nav-icon">🏆</span>Ranks</div>
-    </div>
+    <nav id="nav-bottom">
+        <div class="nav-link" style="color:white"><i>⚒️</i>LAB</div>
+        <div class="nav-link"><i>🪐</i>PLANETS</div>
+        <div class="nav-link"><i>💎</i>SHOP</div>
+        <div class="nav-link"><i>🏆</i>RANKS</div>
+    </nav>
 
     <script>
-        let zoomBalance = 1;
+        let balance = 1000;
+        let tapsDone = 0;
+        let requiredTaps = 0;
+        let currentRarity = null;
+        let farmRate = 0;
 
-        function handleTap() {
-            if(zoomBalance <= 0) return;
-            zoomBalance--; // Meccanica MASTER V.29 (1 tap = 1 ZOOM)
-            document.getElementById('zoom-balance').innerText = zoomBalance;
-            // Aggiungi logica Crafting V.29 (materializzazione pianeta) qui
+        // 1. Definiamo i costi e rendimenti per rarità
+        const rarityConfig = [
+            { name: "BASIC", chance: 0.60, taps: 20, rate: 2, color: 0x777777 },
+            { name: "RARE", chance: 0.25, taps: 50, rate: 10, color: 0x0070dd },
+            { name: "EPIC", chance: 0.10, taps: 100, rate: 25, color: 0xa335ee },
+            { name: "GOLD", chance: 0.05, taps: 250, rate: 100, color: 0xffd700 }
+        ];
+
+        // 2. Il sistema sceglie la rarità all'inizio del primo tap
+        function initRarity() {
+            const rng = Math.random();
+            let cumulative = 0;
+            for (let config of rarityConfig) {
+                cumulative += config.chance;
+                if (rng <= cumulative) {
+                    currentRarity = config;
+                    requiredTaps = config.taps;
+                    break;
+                }
+            }
         }
 
-        // --- ENGINE 3D OTTIMIZZATO (Effetto Pulsazione) ---
+        function handleTap() {
+            if (balance <= 0) return;
+            if (!currentRarity) initRarity();
+            
+            balance--;
+            tapsDone++;
+            document.getElementById('bal').innerText = balance;
+            
+            // Aggiorna UI Progress
+            document.getElementById('progress-info').innerText = `FORGING: ${tapsDone} / ${requiredTaps}`;
+            
+            // Animazione 3D progressiva
+            let scale = 1 + (tapsDone / requiredTaps) * 1.2;
+            planet.scale.set(scale, scale, scale);
+            planet.rotation.y += 0.2;
+
+            if (tapsDone >= requiredTaps) {
+                finalizePlanet();
+            }
+        }
+
+        function finalizePlanet() {
+            document.getElementById('ui-center').style.display = "none";
+            document.getElementById('farm-widgets').style.display = "grid";
+            
+            document.getElementById('rarity-tag').innerText = currentRarity.name;
+            document.getElementById('rarity-tag').style.color = '#' + currentRarity.color.toString(16);
+            document.getElementById('farm-rate').innerText = "+" + currentRarity.rate;
+            
+            planet.material.color.setHex(currentRarity.color);
+            planet.material.wireframe = false;
+            
+            // Start real-time farming
+            setInterval(() => {
+                balance += (currentRarity.rate / 3600);
+                document.getElementById('bal').innerText = Math.floor(balance);
+            }, 1000);
+        }
+
+        // --- ENGINE 3D ---
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // Luci
-        const light = new THREE.DirectionalLight(0xffffff, 1.2);
+        const light = new THREE.PointLight(0xffffff, 1.5);
         light.position.set(5, 5, 5);
         scene.add(light);
-        scene.add(new THREE.AmbientLight(0x333333));
+        scene.add(new THREE.AmbientLight(0x222222));
 
-        // Pianeta (Sfera solida, non griglia)
-        const geometry = new THREE.SphereGeometry(1.5, 64, 64);
-        const material = new THREE.MeshPhongMaterial({ 
-            color: 0x3498db, 
-            emissive: 0x000000,
-            shininess: 80,
-            flatShading: false
-        });
+        const geometry = new THREE.IcosahedronGeometry(1.2, 3);
+        const material = new THREE.MeshPhongMaterial({ color: 0x333333, wireframe: true });
         const planet = new THREE.Mesh(geometry, material);
         scene.add(planet);
 
-        // Aggiungiamo stelle/particelle (Effetto screenshot)
-        const starQty = 600;
-        const starGeom = new THREE.BufferGeometry();
-        const starPos = new Float32Array(starQty * 3);
-        for(let i=0; i<starQty*3; i++) { starPos[i] = (Math.random() - 0.5) * 80; }
-        starGeom.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1, transparent: true, opacity: 0.7 });
-        const stars = new THREE.Points(starGeom, starMat);
-        scene.add(stars);
-
-        camera.position.z = 4;
-
-        // Logica Pulsazione
-        let startTime = Date.now();
+        camera.position.z = 5;
 
         function animate() {
             requestAnimationFrame(animate);
-            let time = (Date.now() - startTime) * 0.001;
-            
-            // Effetto Pulsazione: la scala oscilla tra 0.95 e 1.05
-            let pulseScale = 1 + 0.05 * Math.sin(time * 2);
-            planet.scale.set(pulseScale, pulseScale, pulseScale);
-            
-            planet.rotation.y += 0.004; // Rotazione lenta
-            stars.rotation.y -= 0.0002; // Stelle ruotano piano
-
+            planet.rotation.y += 0.005;
             renderer.render(scene, camera);
         }
         animate();
-
-        // Safe Area per Telegram
-        function adjustSafeArea() {
-            const h = window.visualViewport.height;
-            document.body.style.height = `${h}px`;
-        }
-        window.visualViewport.addEventListener('resize', adjustSafeArea);
-        adjustSafeArea();
     </script>
 </body>
 </html>
