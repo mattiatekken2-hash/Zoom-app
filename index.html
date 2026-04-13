@@ -3,175 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ZOOM - Master App</title>
+    <title>ZOOM MASTER V.29</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        :root { --main-color: #00ffcc; --gold: #ffd700; --danger: #ff4444; }
-        body { margin: 0; background: #000; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        :root { --main: #00ffcc; --gold: #ffd700; --panel: rgba(10, 10, 10, 0.95); }
+        body { margin: 0; background: #000; color: white; font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden; user-select: none; }
         
-        /* UI SUPERIORE */
-        #top-ui { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-around; z-index: 10; }
-        .stat-box { background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--main-color); backdrop-filter: blur(10px); }
+        /* HEADER STATS */
+        #header { position: absolute; top: 0; width: 100%; display: flex; justify-content: space-around; padding: 15px 0; z-index: 10; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); }
+        .stat { background: rgba(255,255,255,0.05); padding: 8px 15px; border-radius: 12px; border: 1px solid var(--main); font-weight: bold; font-size: 14px; backdrop-filter: blur(10px); }
 
-        /* CIRCULAR SEASON PROGRESS (3 MESI) */
-        #season-circle { position: absolute; top: 65px; right: 20px; width: 50px; height: 50px; }
-        .circle-svg { transform: rotate(-90deg); }
-        .circle-bg { fill: none; stroke: #333; stroke-width: 4; }
-        .circle-bar { fill: none; stroke: var(--main-color); stroke-width: 4; stroke-dasharray: 126; stroke-dashoffset: 100; transition: 1s; }
+        /* SEASON CIRCLE */
+        #season-box { position: absolute; top: 70px; right: 20px; text-align: center; z-index: 10; }
+        .c-bar { width: 45px; height: 45px; border: 3px solid #222; border-top: 3px solid var(--main); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; }
 
-        /* LIVE ACTIVITY FEED (SOTTO IL TASTO FARM) */
-        #activity-feed { position: absolute; bottom: 135px; width: 100%; font-size: 11px; color: var(--main-color); text-align: center; height: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        /* LIVE FEED (FOMO) */
+        #feed { position: absolute; bottom: 140px; width: 100%; text-align: center; color: var(--main); font-size: 11px; font-weight: 300; text-transform: uppercase; letter-spacing: 1px; z-index: 5; }
 
-        /* CONTAINER 3D */
-        #container { width: 100vw; height: 100vh; position: fixed; top: 0; z-index: 1; }
+        /* MAIN 3D CONTAINER */
+        #canvas-container { width: 100vw; height: 100vh; position: fixed; top: 0; }
 
-        /* CONTROLLI */
-        #controls { position: absolute; bottom: 30px; width: 100%; z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        .btn-farm { background: var(--main-color); border: none; color: #000; padding: 18px 50px; border-radius: 40px; font-weight: bold; font-size: 20px; box-shadow: 0 0 25px var(--main-color); }
+        /* CONTROLS */
+        #footer { position: absolute; bottom: 30px; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; gap: 10px; }
+        .btn-main { background: var(--main); color: #000; border: none; padding: 18px 60px; border-radius: 40px; font-weight: 900; font-size: 20px; box-shadow: 0 0 30px rgba(0,255,204,0.4); text-transform: uppercase; }
+        .btn-main:active { transform: scale(0.92); }
+
+        /* MODALS (SHOP, FLIP) */
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 88%; background: var(--panel); border: 1px solid var(--main); border-radius: 24px; padding: 20px; z-index: 100; box-shadow: 0 0 50px rgba(0,0,0,1); }
+        .active { display: block; animation: zoomIn 0.2s ease-out; }
+        @keyframes zoomIn { from { opacity: 0; transform: translate(-50%, -40%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
         
-        /* MODALI (SHOP & COIN FLIP) */
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; background: #0a0a0a; border: 2px solid var(--main-color); border-radius: 25px; padding: 25px; z-index: 100; text-align: center; box-shadow: 0 0 50px rgba(0,255,204,0.3); }
-        .wallet-display { background: #000; padding: 12px; border-radius: 12px; font-size: 10px; word-break: break-all; margin: 15px 0; border: 1px dashed var(--main-color); color: #fff; }
-        .btn-action { background: transparent; border: 1px solid white; color: white; padding: 12px 25px; border-radius: 15px; margin: 5px; font-weight: bold; }
-
-        .active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .wallet-card { background: #000; border: 1px dashed var(--main); padding: 12px; margin: 15px 0; border-radius: 12px; font-size: 10px; word-break: break-all; }
+        .btn-sec { background: transparent; border: 1px solid #444; color: white; padding: 10px 20px; border-radius: 12px; margin: 5px; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div id="top-ui">
-        <div class="stat-box" onclick="toggleModal('shop')">🛒 SHOP</div>
-        <div class="stat-box">🪐 <span id="balance">1000</span> $ZOOM</div>
-        <div class="stat-box" onclick="toggleModal('flip')">🎲 FLIP</div>
+    <div id="header">
+        <div class="stat" onclick="openM('shop-m')">🛒 SHOP</div>
+        <div class="stat">🪐 <span id="bal">1000</span> $ZOOM</div>
+        <div class="stat" onclick="openM('flip-m')">🎲 FLIP</div>
     </div>
 
-    <div id="season-circle">
-        <svg class="circle-svg" width="50" height="50">
-            <circle class="circle-bg" cx="25" cy="25" r="20"></circle>
-            <circle class="circle-bar" cx="25" cy="25" r="20"></circle>
-        </svg>
-        <div style="position:absolute; top:16px; left:12px; font-size:9px; font-weight:bold;">S1/6</div>
+    <div id="season-box">
+        <div class="c-bar">S1/6</div>
+        <div style="font-size: 8px; margin-top: 4px;">SEASON</div>
     </div>
 
-    <div id="container"></div>
+    <div id="canvas-container"></div>
 
-    <div id="activity-feed">
-        <div id="feed-text">IN ATTESA DI ATTIVITÀ...</div>
+    <div id="feed">CARICAMENTO DATI LIVE...</div>
+
+    <div id="footer">
+        <button class="btn-main" onclick="tap()">TAP TO CRAFT</button>
+        <div style="font-size: 10px; color: #555;">ZOOM PROTOCOL V.29</div>
     </div>
 
-    <div id="controls">
-        <button class="btn-farm" id="farmBtn" onclick="handleTap()">TAP TO CRAFT</button>
-        <div style="font-size: 11px; color: #777;">SISTEMA ZOOM V.29</div>
+    <div id="shop-m" class="modal">
+        <h2 style="margin:0; color:var(--main)">ZOOM SHOP</h2>
+        <p style="font-size:14px;">Acquista <b>IL SOLE</b> (10 TON)<br><small>Rendimento Max + Unicità</small></p>
+        <div class="wallet-card">UQCbU2lE4-xTcX2cjX75Uq4LQskpL-Xm71yLrA58QxytkgzS</div>
+        <button class="btn-sec" style="border-color:var(--main)" onclick="copyW()">COPY ADDRESS</button>
+        <p style="font-size:10px; color:#ff4444;">⚠️ INVIA SOLO TON (RETE TON)</p>
+        <button class="btn-sec" onclick="closeM()">CHIUDI</button>
     </div>
 
-    <div id="shop" class="modal">
-        <h2 style="color:var(--main-color)">ZOOM SHOP</h2>
-        <p>Acquista IL SOLE (10 TON)<br><span style="font-size:12px; color:var(--gold)">Rendimento Massimo Garantito</span></p>
-        
-        <div class="wallet-display" id="walletAddr">UQCbU2lE4-xTcX2cjX75Uq4LQskpL-Xm71yLrA58QxytkgzS</div>
-        
-        <button class="btn-action" style="background: var(--main-color); color: #000; border:none;" onclick="copyWallet()">COPY WALLET ADDR</button>
-        
-        <div style="color: var(--danger); font-size: 11px; margin-top: 15px; font-weight: bold;">
-            ⚠️ TRANSACTION ALERT:<br>Invia solo TON. Altre valute andranno perse.
-        </div>
-        <br>
-        <button class="btn-action" onclick="toggleModal('shop')">TORNA AL GIOCO</button>
-    </div>
-
-    <div id="flip" class="modal">
-        <h2 style="color:var(--main-color)">QUANTUM FLIP</h2>
+    <div id="flip-m" class="modal">
+        <h2 style="margin:0;">COIN FLIP</h2>
         <p>Scommetti 500 $ZOOM</p>
-        <div id="coin-area" style="background: linear-gradient(45deg, #111, #222); height: 120px; display: flex; align-items: center; justify-content: center; margin: 20px; border-radius: 20px; border: 1px solid #333;">
-            <div id="coin" style="font-size: 50px;">🪐</div>
-        </div>
-        <button class="btn-action" style="border-color:var(--main-color)" onclick="startFlip()">SCOMMETTI ORA</button>
-        <button class="btn-action" onclick="toggleModal('flip')">CHIUDI</button>
+        <div id="coin-res" style="font-size:40px; margin:20px;">🪐</div>
+        <button class="btn-main" style="font-size:14px; padding:12px 30px;" onclick="runFlip()">SCOMMETTI</button><br><br>
+        <button class="btn-sec" onclick="closeM()">CHIUDI</button>
     </div>
 
     <script>
-        const DEV_WALLET = "UQCbU2lE4-xTcX2cjX75Uq4LQskpL-Xm71yLrA58QxytkgzS";
-        let zoomBalance = 1000;
+        let balance = 1000;
+        const messages = ["• IL SOLE ACQUISTATO (18/20) •", "• NUOVO GOLD PIANETA GENERATO •", "• UTENTE X HA VINTO IL FLIP •", "• WEALTH RANK AGGIORNATO •"];
         
-        const feedMessages = [
-            "• Utente X ha attivato un Gold •",
-            "• IL SOLE è stato acquistato! (18/20) •",
-            "• Milestone 100 inviti raggiunta! •",
-            "• Wealth Rank aggiornato •",
-            "• Nuovo Pianeta Rare generato •"
-        ];
-
-        function handleTap() {
-            if(zoomBalance <= 0) {
-                alert("Saldo $ZOOM esaurito!");
-                return;
-            }
-            zoomBalance--;
-            document.getElementById('balance').innerText = zoomBalance;
-            
-            // Animazione rotazione rapida al Tap
-            planet.rotation.y += 0.3;
-            planet.scale.x = 1.1; // Pulsazione
-            setTimeout(() => planet.scale.x = 1, 100);
+        function tap() {
+            if(balance <= 0) return;
+            balance--;
+            document.getElementById('bal').innerText = balance;
+            planet.scale.set(1.1, 1.1, 1.1);
+            setTimeout(() => planet.scale.set(1, 1, 1), 100);
         }
 
-        function toggleModal(id) {
-            const m = document.getElementById(id);
-            m.classList.toggle('active');
-        }
+        function openM(id) { document.getElementById(id).classList.add('active'); }
+        function closeM() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); }
+        function copyW() { navigator.clipboard.writeText("UQCbU2lE4-xTcX2cjX75Uq4LQskpL-Xm71yLrA58QxytkgzS"); alert("Copiato!"); }
 
-        function copyWallet() {
-            navigator.clipboard.writeText(DEV_WALLET);
-            alert("Wallet ZOOM copiato! Invia i fondi e tieni lo screenshot.");
-        }
-
-        function startFlip() {
-            if(zoomBalance < 500) { alert("Saldo insufficiente per il Flip!"); return; }
-            
-            const coin = document.getElementById('coin');
-            coin.style.transition = "0.5s";
-            coin.style.transform = "rotateY(720deg)";
-            
-            zoomBalance -= 500;
-            document.getElementById('balance').innerText = zoomBalance;
-            
-            const win = Math.random() < 0.45; // 45% Win rate (nascosto)
-
+        function runFlip() {
+            if(balance < 500) return;
+            balance -= 500;
+            const win = Math.random() < 0.45;
+            document.getElementById('coin-res').innerText = "🌀";
             setTimeout(() => {
-                coin.style.transform = "rotateY(0deg)";
-                if(win) {
-                    zoomBalance += 1000;
-                    alert("SISTEMA ZOOM: Hai Vinto 1000 $ZOOM!");
-                } else {
-                    alert("SISTEMA ZOOM: Scommessa Persa.");
-                }
-                document.getElementById('balance').innerText = zoomBalance;
-            }, 600);
+                if(win) { balance += 1000; document.getElementById('coin-res').innerText = "💎"; alert("VINTO!"); }
+                else { document.getElementById('coin-res').innerText = "💀"; alert("PERSO!"); }
+                document.getElementById('bal').innerText = balance;
+            }, 800);
         }
 
-        // FEED CICLICO ATTIVITÀ
-        let feedIdx = 0;
         setInterval(() => {
-            feedIdx = (feedIdx + 1) % feedMessages.length;
-            const text = document.getElementById('feed-text');
-            text.style.opacity = 0;
-            setTimeout(() => {
-                text.innerText = feedMessages[feedIdx];
-                text.style.opacity = 1;
-            }, 500);
+            document.getElementById('feed').innerText = messages[Math.floor(Math.random()*messages.length)];
         }, 4000);
 
-        // --- MOTORE 3D ZOOM ---
+        // ENGINE 3D OTTIMIZZATO
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        document.getElementById('container').appendChild(renderer.domElement);
+        renderer.setPixelRatio(window.devicePixelRatio > 1 ? 2 : 1);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        // Pianeta iniziale (Wireframe)
-        const geometry = new THREE.SphereGeometry(1.6, 32, 32);
-        const material = new THREE.MeshBasicMaterial({ color: 0x00ffcc, wireframe: true });
+        // Luci
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 5, 5);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
+
+        // Pianeta
+        const geometry = new THREE.IcosahedronGeometry(1.5, 3); // Più leggero per mobile
+        const material = new THREE.MeshPhongMaterial({ color: 0x00ffcc, wireframe: true, emissive: 0x002211 });
         const planet = new THREE.Mesh(geometry, material);
         scene.add(planet);
 
@@ -180,17 +133,9 @@
         function animate() {
             requestAnimationFrame(animate);
             planet.rotation.y += 0.005;
-            planet.rotation.x += 0.002;
             renderer.render(scene, camera);
         }
         animate();
-
-        // Resize handler
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
     </script>
 </body>
 </html>
