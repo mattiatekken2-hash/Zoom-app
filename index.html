@@ -3,161 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZOOM MASTER V.35 - ACTIVE FARMING</title>
+    <title>ZOOM MASTER V.36 - SLOT SYSTEM</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        :root { --neon: #00f2fe; --gold: #ffd700; --epic: #b721ff; --rare: #4facfe; --bg: #000; }
+        :root { --neon: #00f2fe; --gold: #ffd700; --bg: #000; --card: rgba(20,20,20,0.9); }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; color: white; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); overflow: hidden; height: 100vh; }
 
-        #ui-header { position: absolute; top: 0; width: 100%; padding: 25px; z-index: 100; display: flex; justify-content: space-between; align-items: center; }
-        .bal-box { background: rgba(255,255,255,0.05); border: 1px solid var(--neon); padding: 12px 20px; border-radius: 30px; font-weight: 900; font-size: 22px; backdrop-filter: blur(10px); }
+        /* UI HEADER */
+        #header { position: absolute; top: 0; width: 100%; padding: 25px; z-index: 100; display: flex; justify-content: space-between; }
+        .bal-pill { background: var(--card); border: 1px solid var(--neon); padding: 10px 20px; border-radius: 30px; font-weight: 900; font-size: 20px; }
 
-        #stage-canvas { position: absolute; top: 0; width: 100%; height: 100%; z-index: 1; }
+        /* AREA SLOTS (Specifica 4) */
+        #slots-container { position: absolute; top: 100px; width: 100%; padding: 0 25px; z-index: 50; display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; }
+        .slot { min-width: 80px; height: 100px; background: rgba(255,255,255,0.03); border: 1px dashed #333; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        .slot.occupied { border: 1px solid var(--neon); background: var(--card); }
+        .slot-rarity { font-size: 8px; font-weight: 900; margin-top: 5px; }
+        .buy-slot { border: 1px solid var(--gold); color: var(--gold); font-size: 24px; }
 
-        #ui-controls { position: absolute; bottom: 0; width: 100%; padding: 40px 25px 60px; z-index: 10; background: linear-gradient(0deg, #000 85%, transparent); display: flex; flex-direction: column; align-items: center; }
+        /* 3D LAB */
+        #lab-target { position: absolute; top: 0; width: 100%; height: 100%; z-index: 1; }
+
+        /* CONTROLLI */
+        #ui-bottom { position: absolute; bottom: 0; width: 100%; padding: 40px 25px 60px; z-index: 10; background: linear-gradient(0deg, #000 80%, transparent); display: flex; flex-direction: column; align-items: center; }
         
-        .status-msg { font-size: 10px; color: var(--neon); letter-spacing: 4px; font-weight: 900; margin-bottom: 25px; text-transform: uppercase; }
-
-        .btn-craft { width: 100%; height: 90px; background: var(--neon); border: none; border-radius: 28px; color: #000; font-weight: 900; font-size: 26px; text-transform: uppercase; box-shadow: 0 0 30px rgba(0, 242, 254, 0.4); }
-        .btn-craft:active { transform: scale(0.95); }
-
-        #widget-grid { display: none; width: 100%; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-        .w-item { background: rgba(20,20,20,0.9); border: 1px solid #222; padding: 20px 5px; border-radius: 25px; text-align: center; transition: 0.3s; }
-        .w-item.active-farm { border-color: var(--neon); box-shadow: 0 0 15px rgba(0, 242, 254, 0.2); }
-        .w-item span { font-size: 8px; color: #555; display: block; margin-bottom: 5px; font-weight: 800; }
-        .w-item b { font-size: 15px; }
-
-        .rarity-pop { position: absolute; top: 130px; width: 100%; text-align: center; z-index: 50; font-weight: 900; font-size: 45px; display: none; text-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .btn-craft { width: 100%; height: 85px; background: var(--neon); border: none; border-radius: 25px; color: #000; font-weight: 900; font-size: 24px; text-transform: uppercase; box-shadow: 0 0 25px rgba(0, 242, 254, 0.3); }
+        .btn-craft:disabled { background: #222; color: #555; box-shadow: none; }
     </style>
 </head>
 <body>
 
-    <div id="ui-header">
-        <div style="font-weight: 900; font-size: 26px;">ZOOM.</div>
-        <div class="bal-box">🪐 <span id="balance">1100</span></div>
+    <div id="header">
+        <div style="font-weight: 900; font-size: 24px;">ZOOM.</div>
+        <div class="bal-pill">🪐 <span id="balance">1100</span></div>
     </div>
 
-    <div id="rarity-tag" class="rarity-pop"></div>
+    <div id="slots-container">
+        <div class="slot" id="slot-0"><span>EMPTY</span></div>
+        <div class="slot" id="slot-1"><span>EMPTY</span></div>
+        <div class="slot buy-slot" onclick="buySlot()">+</div>
+    </div>
 
-    <div id="stage-canvas"></div>
+    <div id="lab-target"></div>
 
-    <div id="ui-controls">
-        <div class="status-msg" id="msg">SYSTEM READY</div>
-        
+    <div id="ui-bottom">
+        <div id="status-txt" style="font-size: 10px; color: var(--neon); letter-spacing: 3px; margin-bottom: 20px; font-weight: 800;">LAB READY</div>
         <button class="btn-craft" id="craft-btn">CRAFT PLANET</button>
-
-        <div id="widget-grid">
-            <div class="w-item" id="farm-trigger" onclick="startFarming()">
-                <span>FARM</span><b id="rate-display">START</b>
-            </div>
-            <div class="w-item" onclick="location.reload()">
-                <span>BURN</span><b style="color:#ff3e3e">15%</b>
-            </div>
-            <div class="w-item">
-                <span>MARKET</span><b style="color:var(--gold)">SELL</b>
-            </div>
-        </div>
+        <div style="margin-top: 20px; font-size: 8px; color: #333;">WALLET: UQCb...kgzS</div>
     </div>
 
     <script>
-        const tiers = {
-            BASIC: { color: 0x888888, rate: 10, prob: 0.60 },
-            RARE:  { color: 0x4facfe, rate: 50, prob: 0.25 },
-            EPIC:  { color: 0xb721ff, rate: 180, prob: 0.10 },
-            GOLD:  { color: 0xffd700, rate: 800, prob: 0.05 }
-        };
+        const tiers = [
+            { name: "BASIC", color: 0x888888, rate: 10, prob: 0.6 },
+            { name: "RARE", color: 0x4facfe, rate: 50, prob: 0.3 },
+            { name: "GOLD", color: 0xffd700, rate: 500, prob: 0.1 }
+        ];
 
-        let state = { bal: 1100, taps: 0, goal: 30, isDone: false, tier: null, isFarming: false };
+        let state = {
+            bal: 1100, taps: 0, goal: 25,
+            slots: [null, null],
+            totalSlots: 2,
+            isCrafting: false
+        };
 
         // --- 3D ENGINE ---
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        document.getElementById('stage-canvas').appendChild(renderer.domElement);
+        document.getElementById('lab-target').appendChild(renderer.domElement);
 
-        const light = new THREE.PointLight(0xffffff, 2, 100);
+        const light = new THREE.PointLight(0xffffff, 2);
         light.position.set(5, 5, 5);
         scene.add(light, new THREE.AmbientLight(0x111111));
 
         const planet = new THREE.Mesh(
-            new THREE.SphereGeometry(1.6, 64, 64),
-            new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 1, roughness: 0.1, wireframe: true, emissive: 0x00f2fe, emissiveIntensity: 0.1 })
+            new THREE.IcosahedronGeometry(1.5, 4),
+            new THREE.MeshStandardMaterial({ color: 0x222222, wireframe: true, metalness: 0.8 })
         );
         scene.add(planet);
         camera.position.z = 5;
 
-        // --- CORE LOGIC ---
-        const craftBtn = document.getElementById('craft-btn');
-        const balanceUI = document.getElementById('balance');
+        // --- LOGICA CORE ---
+        const btn = document.getElementById('craft-btn');
+        const balUI = document.getElementById('balance');
 
-        function handleTap() {
-            if(state.isDone) return;
+        function doTap() {
+            // Controllo Slot Liberi
+            const freeSlot = state.slots.indexOf(null);
+            if(freeSlot === -1) return alert("All slots full! Buy more or Burn one.");
+            
+            state.isCrafting = true;
             state.bal--;
             state.taps++;
-            balanceUI.innerText = state.bal;
-            document.getElementById('msg').innerText = `FORGING: ${state.taps}/${state.goal}`;
+            balUI.innerText = state.bal;
+            document.getElementById('status-txt').innerText = `FORGING: ${state.taps}/${state.goal}`;
 
-            gsap.fromTo(planet.scale, {x:1.3, y:1.3, z:1.3}, {x:1, y:1, z:1, duration: 0.2});
-            planet.rotation.y += 0.5;
+            gsap.fromTo(planet.scale, {x:1.3, y:1.3, z:1.3}, {x:1, y:1, z:1, duration: 0.1});
+            planet.rotation.y += 0.4;
 
-            if(state.taps >= state.goal) finalize();
+            if(state.taps >= state.goal) finalize(freeSlot);
         }
 
-        function finalize() {
-            state.isDone = true;
-            craftBtn.style.display = "none";
-            document.getElementById('widget-grid').style.display = "grid";
-
+        function finalize(slotIndex) {
             // RNG Rarità
-            const keys = Object.keys(tiers);
             const rand = Math.random();
-            let cum = 0;
-            for(let k of keys) {
-                cum += tiers[k].prob;
-                if(rand <= cum) { state.tier = { name: k, ...tiers[k] }; break; }
+            let cum = 0; let winTier;
+            for(let t of tiers){ cum += t.prob; if(rand <= cum){ winTier = t; break; } }
+
+            state.slots[slotIndex] = winTier;
+            updateSlotsUI();
+
+            // Animazione: Il pianeta "vola" nello slot
+            gsap.to(planet.scale, {x:0, y:0, z:0, duration: 0.5, onComplete: resetLab});
+        }
+
+        function resetLab() {
+            state.taps = 0;
+            state.isCrafting = false;
+            planet.scale.set(1,1,1);
+            planet.material.wireframe = true;
+            planet.material.color.setHex(0x222222);
+            document.getElementById('status-txt').innerText = "LAB READY";
+        }
+
+        function updateSlotsUI() {
+            state.slots.forEach((s, i) => {
+                const el = document.getElementById(`slot-${i}`);
+                if(s) {
+                    el.classList.add('occupied');
+                    el.innerHTML = `<div style="width:30px; height:30px; background:#${s.color.toString(16)}; border-radius:50%"></div><span class="slot-rarity" style="color:#${s.color.toString(16)}">${s.name}</span><span style="font-size:7px">+${s.rate}/H</span>`;
+                }
+            });
+        }
+
+        function buySlot() {
+            alert("Send 0.25 TON to unlock new Slot.");
+            // Logica per aggiungere nuovo slot (visiva)
+            const newIdx = state.slots.length;
+            state.slots.push(null);
+            const container = document.getElementById('slots-container');
+            const newSlot = document.createElement('div');
+            newSlot.className = 'slot';
+            newSlot.id = `slot-${newIdx}`;
+            newSlot.innerHTML = '<span>EMPTY</span>';
+            container.insertBefore(newSlot, container.lastElementChild);
+        }
+
+        // Farming Loop Globale
+        setInterval(() => {
+            let totalRate = 0;
+            state.slots.forEach(s => { if(s) totalRate += s.rate; });
+            if(totalRate > 0) {
+                state.bal += (totalRate / 3600);
+                balUI.innerText = Math.floor(state.bal);
             }
+        }, 1000);
 
-            // Visual Setup
-            planet.material.wireframe = false;
-            planet.material.color.setHex(state.tier.color);
-            planet.material.emissive.setHex(state.tier.color);
-            planet.material.emissiveIntensity = 0.5;
-
-            const tag = document.getElementById('rarity-tag');
-            tag.innerText = state.tier.name;
-            tag.style.color = "#" + state.tier.color.toString(16);
-            tag.style.display = "block";
-            
-            document.getElementById('msg').innerText = "PLANET CRAFTED";
-            gsap.to(planet.scale, {x:2, y:2, z:2, duration: 1.5, ease: "elastic.out(1, 0.3)"});
-        }
-
-        function startFarming() {
-            if(state.isFarming || !state.tier) return;
-            
-            state.isFarming = true;
-            const farmW = document.getElementById('farm-trigger');
-            farmW.classList.add('active-farm');
-            document.getElementById('rate-display').innerText = `+${state.tier.rate}/H`;
-            document.getElementById('msg').innerText = "FARMING IN PROGRESS";
-
-            // Loop Produzione: Zoom / 3600 per avere il rate al secondo
-            setInterval(() => {
-                state.bal += (state.tier.rate / 3600);
-                balanceUI.innerText = Math.floor(state.bal);
-            }, 1000);
-        }
-
-        craftBtn.addEventListener('mousedown', handleTap);
-        craftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handleTap(); });
+        btn.addEventListener('mousedown', doTap);
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); doTap(); });
 
         function animate() {
             requestAnimationFrame(animate);
-            // Ruota più veloce se farma
-            planet.rotation.y += state.isFarming ? 0.02 : 0.005;
+            planet.rotation.y += 0.005;
             renderer.render(scene, camera);
         }
         animate();
