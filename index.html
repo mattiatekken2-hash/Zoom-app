@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZOOM MASTER V.31 - NEON EDITION</title>
+    <title>ZOOM MASTER V.32 - PARTICLE ENGINE</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
@@ -11,151 +11,160 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: white; overflow: hidden; height: 100vh; }
 
-        /* HEADER STATS */
-        #ui-layer { position: absolute; top: 0; width: 100%; padding: 25px; z-index: 100; display: flex; justify-content: space-between; pointer-events: none; }
-        .stat-pill { background: rgba(0,0,0,0.6); border: 1px solid var(--neon); padding: 10px 20px; border-radius: 30px; backdrop-filter: blur(10px); pointer-events: auto; box-shadow: 0 0 20px rgba(0,242,254,0.2); }
-        #bal-val { font-size: 22px; font-weight: 900; letter-spacing: -1px; }
+        /* UI SUPERIORE */
+        #header { position: absolute; top: 0; width: 100%; padding: 30px 25px; z-index: 100; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
+        .logo { font-weight: 900; font-size: 26px; letter-spacing: -1.5px; pointer-events: auto; }
+        .balance-pill { background: rgba(255,255,255,0.03); border: 1px solid rgba(0,242,254,0.3); padding: 12px 22px; border-radius: 40px; backdrop-filter: blur(15px); pointer-events: auto; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        #bal-val { font-size: 22px; font-weight: 900; color: #fff; }
 
-        /* 3D VIEW */
+        /* 3D CANVAS */
         #render-target { position: absolute; top: 0; width: 100%; height: 100%; z-index: 1; }
 
-        /* CONTROLLI INFERIORI (Stile Video) */
-        #bottom-sheet { position: absolute; bottom: 0; width: 100%; padding: 30px 20px 50px; z-index: 10; background: linear-gradient(0deg, #000 70%, transparent); display: flex; flex-direction: column; align-items: center; }
+        /* CONTROLLI */
+        #ui-bottom { position: absolute; bottom: 0; width: 100%; padding: 40px 25px 60px; z-index: 10; background: linear-gradient(0deg, #000 60%, transparent); display: flex; flex-direction: column; align-items: center; }
         
-        .status-info { font-size: 10px; color: var(--neon); letter-spacing: 3px; font-weight: 800; margin-bottom: 20px; text-transform: uppercase; text-shadow: 0 0 10px var(--neon); }
+        .status-msg { font-size: 11px; color: var(--neon); letter-spacing: 4px; font-weight: 900; margin-bottom: 25px; text-transform: uppercase; opacity: 0.8; }
 
-        .btn-tap { 
-            width: 100%; height: 90px; background: var(--neon); border: none; border-radius: 25px; 
-            color: #000; font-weight: 900; font-size: 26px; text-transform: uppercase;
-            box-shadow: 0 0 30px var(--neon); transition: 0.1s;
+        .main-btn { 
+            width: 100%; height: 95px; background: var(--neon); border: none; border-radius: 30px; 
+            color: #000; font-weight: 900; font-size: 28px; text-transform: uppercase;
+            box-shadow: 0 0 40px rgba(0, 242, 254, 0.4); transition: 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .btn-tap:active { transform: scale(0.92) translateY(5px); box-shadow: 0 0 10px var(--neon); }
+        .main-btn:active { transform: scale(0.9) translateY(8px); box-shadow: 0 0 15px var(--neon); }
 
-        /* WIDGETS POST-CRAFT */
-        #farm-grid { display: none; width: 100%; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .widget { background: rgba(20,20,20,0.8); border: 1px solid #333; padding: 15px; border-radius: 22px; text-align: center; backdrop-filter: blur(5px); }
-        .widget span { font-size: 9px; color: #666; display: block; margin-bottom: 4px; font-weight: bold; }
-        .widget b { font-size: 15px; color: #fff; }
+        #farm-widgets { display: none; width: 100%; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .w-card { background: rgba(15,15,15,0.9); border: 1px solid #222; padding: 18px 10px; border-radius: 25px; text-align: center; backdrop-filter: blur(10px); }
+        .w-card span { font-size: 9px; color: #555; display: block; margin-bottom: 5px; font-weight: 800; letter-spacing: 1px; }
+        .w-card b { font-size: 16px; color: #fff; }
 
-        /* FEED LIVE */
-        #feed { position: absolute; top: 90px; left: 25px; font-size: 10px; color: #555; z-index: 50; }
+        #live-feed { position: absolute; top: 100px; left: 25px; font-size: 10px; color: rgba(255,255,255,0.2); font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="ui-layer">
-        <div style="font-weight: 900; font-size: 24px;">ZOOM<span style="color:var(--neon)">.</span></div>
-        <div class="stat-pill">🪐 <span id="bal-val">1100</span></div>
+    <div id="header">
+        <div class="logo">ZOOM<span style="color:var(--neon)">.</span></div>
+        <div class="balance-pill">🪐 <span id="bal-val">1100</span></div>
     </div>
 
-    <div id="feed">LIVE: IL SOLE #19 GENERATO DA @USER_X</div>
+    <div id="live-feed">GLOBAL: NEW GOLD PLANET CRAFTED BY @ALPHA</div>
 
     <div id="render-target"></div>
 
-    <div id="bottom-sheet">
-        <div class="status-info" id="status-txt">LABORATORY ACTIVE</div>
+    <div id="ui-bottom">
+        <div class="status-msg" id="status-label">READY TO IMPACT</div>
         
-        <button class="btn-tap" id="tap-trigger">CRAFT</button>
+        <button class="main-btn" id="tap-btn">CRAFT</button>
 
-        <div id="farm-grid">
-            <div class="widget"><span>FARMING</span><b id="rate-ui">+0/H</b></div>
-            <div class="widget" onclick="location.reload()"><span>BURN</span><b style="color:#ff3131">15%</b></div>
-            <div class="widget"><span>SELL</span><b style="color:var(--gold)">MARKET</b></div>
+        <div id="farm-widgets">
+            <div class="w-card"><span>FARMING</span><b id="rate-ui">+0/H</b></div>
+            <div class="w-card" onclick="location.reload()"><span>BURN</span><b style="color:#ff3e3e">15%</b></div>
+            <div class="w-card"><span>MARKET</span><b style="color:var(--gold)">LIST</b></div>
         </div>
-
-        <div style="margin-top: 25px; font-size: 9px; color: #333;">WALLET: UQCb...kgzS</div>
+        
+        <div style="margin-top: 30px; font-size: 10px; color: #222; font-weight: bold;">UQCbU2lE4...8QxytkgzS</div>
     </div>
 
     <script>
-        // --- LOGICA DI STATO ---
-        let state = { balance: 1100, taps: 0, goal: 45, isDone: false };
+        let state = { bal: 1100, taps: 0, goal: 40, done: false };
 
-        // --- MOTORE 3D AVANZATO ---
+        // --- ENGINE 3D ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.getElementById('render-target').appendChild(renderer.domElement);
 
-        // Luci Neon
-        const pLight = new THREE.PointLight(0x00f2fe, 5, 50);
-        pLight.position.set(2, 3, 4);
-        scene.add(pLight, new THREE.AmbientLight(0x111111));
+        // Luci
+        const sun = new THREE.DirectionalLight(0xffffff, 2);
+        sun.position.set(5, 5, 5);
+        const neonLight = new THREE.PointLight(0x00f2fe, 10, 50);
+        scene.add(sun, neonLight, new THREE.AmbientLight(0x050505));
 
-        // Pianeta con Materiale Fisico (Riflessi metallici come nel video)
-        const geometry = new THREE.SphereGeometry(1.6, 64, 64);
-        const material = new THREE.MeshStandardMaterial({ 
-            color: 0x111111, 
-            metalness: 0.9, 
-            roughness: 0.1,
-            wireframe: true,
-            emissive: 0x00f2fe,
-            emissiveIntensity: 0.2
+        // Pianeta
+        const planetGeo = new THREE.SphereGeometry(1.5, 64, 64);
+        const planetMat = new THREE.MeshStandardMaterial({ 
+            color: 0x0a0a0a, metalness: 1, roughness: 0.1, wireframe: true,
+            emissive: 0x00f2fe, emissiveIntensity: 0.1
         });
-        const planet = new THREE.Mesh(geometry, material);
+        const planet = new THREE.Mesh(planetGeo, planetMat);
         scene.add(planet);
+
+        // Aura (Atmosfera)
+        const auraGeo = new THREE.SphereGeometry(1.7, 32, 32);
+        const auraMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe, transparent: true, opacity: 0.05, side: THREE.BackSide });
+        const aura = new THREE.Mesh(auraGeo, auraMat);
+        scene.add(aura);
+
+        // Particelle
+        const partCount = 20;
+        const partGeo = new THREE.BufferGeometry();
+        const partPos = new Float32Array(partCount * 3);
+        partGeo.setAttribute('position', new THREE.BufferAttribute(partPos, 3));
+        const partMat = new THREE.PointsMaterial({ color: 0x00f2fe, size: 0.05, transparent: true });
+        const particles = new THREE.Points(partGeo, partMat);
+        scene.add(particles);
+
         camera.position.z = 5;
 
-        // --- SISTEMA DI INPUT ---
-        const btn = document.getElementById('tap-trigger');
+        // --- LOGICA TAP ---
+        const btn = document.getElementById('tap-btn');
         const balUI = document.getElementById('bal-val');
-        const statusUI = document.getElementById('status-txt');
+        const statusUI = document.getElementById('status-label');
 
-        function doTap(e) {
-            if (state.isDone) return;
-            if (e) e.preventDefault();
+        function triggerImpact() {
+            if (state.done) return;
 
-            state.balance--;
+            state.bal--;
             state.taps++;
-            balUI.innerText = state.balance;
-            statusUI.innerText = `FORGING: ${state.taps} / ${state.goal}`;
+            balUI.innerText = state.bal;
+            statusUI.innerText = `FORGING: ${state.taps}/${state.goal}`;
 
-            // Effetto Rimbalzo (Feedback Fisico)
-            gsap.fromTo(planet.scale, {x:1.3, y:1.3, z:1.3}, {x:1, y:1, z:1, duration: 0.2, ease: "back.out(3)"});
-            planet.rotation.y += 0.4;
-            
-            // Aumento intensità luminosa
+            // Feedback Fisico
+            gsap.fromTo(planet.scale, {x:1.4, y:1.4, z:1.4}, {x:1, y:1, z:1, duration: 0.3, ease: "elastic.out(1, 0.3)"});
+            planet.rotation.y += 0.5;
             planet.material.emissiveIntensity += 0.02;
+
+            // Esplosione Particelle
+            const positions = particles.geometry.attributes.position.array;
+            for(let i=0; i<partCount*3; i+=3) {
+                positions[i] = (Math.random()-0.5)*2;
+                positions[i+1] = (Math.random()-0.5)*2;
+                positions[i+2] = (Math.random()-0.5)*2;
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+            gsap.fromTo(particles.scale, {x:0, y:0, z:0}, {x:2, y:2, z:2, duration: 0.4, ease: "power2.out"});
 
             if (state.taps >= state.goal) finalize();
         }
 
         function finalize() {
-            state.isDone = true;
+            state.done = true;
             btn.style.display = "none";
-            document.getElementById('farm-grid').style.display = "grid";
+            document.getElementById('farm-widgets').style.display = "grid";
             
-            // Evoluzione Visiva
             planet.material.wireframe = false;
             planet.material.color.setHex(0x00f2fe);
-            planet.material.emissiveIntensity = 0.5;
+            planet.material.emissiveIntensity = 0.6;
+            aura.material.opacity = 0.2;
             
-            document.getElementById('rate-ui').innerText = "+18/H";
-            statusUI.innerText = "PLANET STABILIZED";
+            document.getElementById('rate-ui').innerText = "+22/H";
+            statusUI.innerText = "MINER ESTABLISHED";
             
-            gsap.to(planet.scale, {x:2.2, y:2.2, z:2.2, duration: 1.5, ease: "elastic.out(1, 0.3)"});
+            gsap.to(planet.scale, {x:2.2, y:2.2, z:2.2, duration: 2, ease: "elastic.out(1, 0.2)"});
         }
 
-        // Eventi Touch/Mouse
-        btn.addEventListener('touchstart', doTap);
-        btn.addEventListener('mousedown', doTap);
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); triggerImpact(); });
+        btn.addEventListener('mousedown', triggerImpact);
 
-        // Render Loop
         function animate() {
             requestAnimationFrame(animate);
             planet.rotation.y += 0.005;
-            planet.rotation.x += 0.002;
+            aura.rotation.z -= 0.002;
             renderer.render(scene, camera);
         }
         animate();
-
-        // Responsive
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
     </script>
 </body>
 </html>
