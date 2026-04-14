@@ -7,212 +7,164 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        :root { --blue: #00f2fe; --gold: #ffd700; --epic: #b721ff; --rare: #4facfe; --basic: #888; --bg: #000; }
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        :root { --neon: #00f2fe; --gold: #ffd700; --epic: #b721ff; --bg: #000; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); color: white; overflow: hidden; height: 100vh; width: 100%; position: fixed; }
 
-        /* --- UI SUPERIORE --- */
-        #top-bar { position: absolute; top: 0; width: 100%; padding: 20px; z-index: 100; display: flex; justify-content: space-between; align-items: flex-start; }
-        .currency-box { background: rgba(255,255,255,0.05); border: 1px solid var(--blue); padding: 10px 20px; border-radius: 20px; backdrop-filter: blur(10px); box-shadow: 0 0 20px rgba(0,242,254,0.2); }
-        #balance { font-size: 24px; font-weight: 900; color: #fff; }
-        .season-info { font-size: 10px; color: #555; letter-spacing: 2px; margin-top: 5px; text-transform: uppercase; }
+        /* HEADER E VALUTA (Specifica 1) */
+        #ui-top { position: absolute; top: 0; width: 100%; padding: 25px; display: flex; justify-content: space-between; z-index: 100; pointer-events: none; }
+        .valuta-box { background: rgba(255,255,255,0.05); border: 1px solid var(--neon); padding: 12px 20px; border-radius: 20px; backdrop-filter: blur(15px); pointer-events: auto; }
+        #balance { font-size: 24px; font-weight: 900; }
 
-        /* --- LIVE FEED (Specifica 10) --- */
-        #live-feed { position: absolute; top: 85px; left: 20px; font-size: 10px; color: var(--blue); text-transform: uppercase; max-width: 200px; animation: fadeLoop 3s infinite; }
-        @keyframes fadeLoop { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        /* AREA 3D LAB (Specifica 2) */
+        #canvas-container { position: absolute; top: 0; width: 100%; height: 65%; z-index: 1; }
 
-        /* --- AREA 3D LAB --- */
-        #stage-3d { position: absolute; top: 0; width: 100%; height: 65%; z-index: 1; }
-
-        /* --- PANNELLO AZIONI --- */
-        #action-panel { position: absolute; bottom: 0; width: 100%; height: 42%; background: #080808; border-top: 1px solid #1a1a1a; border-radius: 40px 40px 0 0; z-index: 10; padding: 25px; display: flex; flex-direction: column; align-items: center; }
+        /* PANNELLO AZIONI (Specifica 3) */
+        #ui-bottom { position: absolute; bottom: 0; width: 100%; height: 42%; background: #070707; border-top: 1px solid #1a1a1a; border-radius: 40px 40px 0 0; z-index: 10; padding: 30px; display: flex; flex-direction: column; align-items: center; }
         
-        /* TASTO TAP CRAFTING */
-        #tap-zone { width: 100%; display: flex; flex-direction: column; align-items: center; }
-        .master-btn { 
-            width: 100%; height: 90px; background: linear-gradient(135deg, var(--blue), #4facfe); 
-            border: none; border-radius: 25px; color: #000; font-weight: 900; font-size: 26px; 
-            box-shadow: 0 10px 30px rgba(0, 242, 254, 0.3); transition: 0.1s;
+        /* IL TASTO IMPATTO */
+        .tap-btn { 
+            width: 100%; height: 95px; background: linear-gradient(135deg, var(--neon), #4facfe); 
+            border: none; border-radius: 28px; color: #000; font-weight: 900; font-size: 26px; 
+            box-shadow: 0 10px 30px rgba(0, 242, 254, 0.3); transition: 0.05s; text-transform: uppercase;
         }
-        .master-btn:active { transform: scale(0.95) translateY(5px); box-shadow: 0 5px 15px rgba(0, 242, 254, 0.2); }
-        .progress-label { color: #444; font-size: 11px; font-weight: 800; letter-spacing: 2px; margin-bottom: 15px; }
+        .tap-btn:active { transform: scale(0.94) translateY(5px); }
 
-        /* WIDGETS POST-CRAFT (Specifica 3) */
-        #farm-widgets { display: none; width: 100%; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
-        .widget { background: #111; border: 1px solid #222; padding: 15px; border-radius: 20px; text-align: center; }
-        .widget span { font-size: 9px; color: #555; display: block; margin-bottom: 5px; }
-        .widget b { font-size: 14px; color: #fff; }
+        /* WIDGETS FARMING (Specifica 3) */
+        #farm-ui { display: none; width: 100%; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 10px; }
+        .widget { background: #111; border: 1px solid #222; padding: 15px; border-radius: 22px; text-align: center; }
+        .widget span { font-size: 10px; color: #555; display: block; margin-bottom: 5px; font-weight: bold; }
+        .widget b { font-size: 16px; color: #fff; }
 
-        /* --- NAVIGAZIONE --- */
-        #nav-bar { position: absolute; bottom: 0; width: 100%; height: 75px; background: #000; border-top: 1px solid #111; display: flex; justify-content: space-around; align-items: center; padding-bottom: 15px; }
-        .nav-item { color: #333; font-size: 10px; font-weight: 900; text-align: center; }
-        .nav-item.active { color: var(--blue); }
-
-        /* --- SHOP & MARKET OVERLAYS --- */
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 200; display: none; padding: 30px; overflow-y: auto; }
-        .card { background: #111; border: 1px solid #222; border-radius: 25px; padding: 20px; margin-bottom: 15px; }
+        /* LIVE FEED (Specifica 10) */
+        #live-feed { position: absolute; top: 90px; left: 25px; font-size: 11px; color: var(--neon); text-transform: uppercase; font-weight: 900; letter-spacing: 1px; }
+        
+        .status-label { font-size: 11px; color: #444; font-weight: 800; letter-spacing: 3px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
-    <div id="view-shop" class="overlay">
-        <h1 style="margin-bottom:20px">SHOP</h1>
-        <div class="card" style="border-color: var(--gold)">
-            <h2 style="color:var(--gold)">THE SUN 🪐</h2>
-            <p style="font-size:12px; color:#666; margin: 10px 0;">Limitato: 20 pezzi. Rendimento massimo assoluto.</p>
-            <button class="master-btn" style="height:50px; font-size:14px" onclick="buySun()">10 TON</button>
-        </div>
-        <button onclick="closeViews()" style="color:var(--blue); font-weight:bold; background:none; border:none">CHIUDI</button>
+    <div id="ui-top">
+        <div style="font-weight: 900; font-size: 22px;">ZOOM<span>.</span></div>
+        <div class="valuta-box">🪐 <span id="balance">1100</span></div>
     </div>
 
-    <div id="top-bar">
-        <div>
-            <div style="font-weight: 900; font-size: 22px;">ZOOM<span style="color:var(--blue)">.</span></div>
-            <div class="season-info">SEASON 1/6 • MASTER V.29</div>
-        </div>
-        <div class="currency-box">
-            <span>🪐</span> <span id="balance">1100</span>
-        </div>
-    </div>
+    <div id="live-feed">LIVE: IL SOLE GENERATO DA @USER72</div>
 
-    <div id="live-feed">IL SOLE È STATO ACQUISTATO! (19/20)</div>
+    <div id="canvas-container"></div>
 
-    <div id="stage-3d"></div>
-
-    <div id="action-panel">
-        <div id="tap-zone">
-            <div class="progress-label" id="status-label">CRAFTING LAB READY</div>
-            <button class="master-btn" id="btn-tap">CRAFT PLANET</button>
-        </div>
-
-        <div id="farm-widgets">
-            <div class="widget"><span>FARMING</span><b id="w-rate">+0/H</b></div>
-            <div class="widget" onclick="burnPlanet()"><span>BURN</span><b style="color:#ff3e3e">15%</b></div>
-            <div class="widget"><span>MARKET</span><b style="color:var(--gold)">LIST</b></div>
-        </div>
+    <div id="ui-bottom">
+        <div class="status-label" id="status-txt">LABORATORY ACTIVE</div>
         
-        <p style="font-size: 8px; color:#222; margin-top: 20px; text-align: center;">WALLET: UQCbU2lE4-xTcX2cjX75Uq4LQskpL-Xm71yLrA58QxytkgzS</p>
-    </div>
+        <button class="tap-btn" id="main-trigger">CRAFT PLANET</button>
 
-    <div id="nav-bar">
-        <div class="nav-item active">LAB</div>
-        <div class="nav-item" onclick="openView('shop')">SHOP</div>
-        <div class="nav-item">MARKET</div>
-        <div class="nav-item">EARN</div>
+        <div id="farm-ui">
+            <div class="widget"><span>FARMING</span><b id="rate-ui">+0/H</b></div>
+            <div class="widget" onclick="location.reload()"><span>BURN</span><b style="color:#ff3e3e">15%</b></div>
+            <div class="widget"><span>SELL</span><b style="color:var(--gold)">MARKET</b></div>
+        </div>
+
+        <div style="margin-top:auto; font-size: 10px; color:#222; text-align: center;">
+            WALLET: UQCbU2lE4-xTcX2cjX75Uq4LQskpL-Xm71yLrA58QxytkgzS
+        </div>
     </div>
 
     <script>
-        // --- CONFIGURAZIONE E STATO ---
+        // --- CONFIGURAZIONE CORE ---
         let state = {
-            zoom: 1100,
-            taps: 0,
-            requiredTaps: 0,
-            isCrafting: false,
-            isCompleted: false,
-            currentTier: null
+            balance: 1100, taps: 0, goal: 0, 
+            isCrafting: false, isDone: false, tier: null
         };
 
         const tiers = {
-            BASIC: { name: "BASIC", color: 0x888888, taps: 25, rate: 2, ton: 0.1 },
-            RARE: { name: "RARE", color: 0x00f2fe, taps: 65, rate: 12, ton: 0.5 },
-            EPIC: { name: "EPIC", color: 0xb721ff, taps: 150, rate: 45, ton: 1.2 },
-            GOLD: { name: "GOLD", color: 0xffd700, taps: 400, rate: 150, ton: 5.0 }
+            BASIC: { name: "BASIC", color: 0x777777, req: 30, rate: 5, chance: 0.6 },
+            RARE:  { name: "RARE",  color: 0x00f2fe, req: 75, rate: 25, chance: 0.25 },
+            GOLD:  { name: "GOLD",  color: 0xffd700, req: 350, rate: 250, chance: 0.15 }
         };
 
         // --- MOTORE 3D (THREE.JS) ---
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / (window.innerHeight * 0.65), 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / (window.innerHeight * 0.6), 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight * 0.65);
-        document.getElementById('stage-3d').appendChild(renderer.domElement);
+        renderer.setSize(window.innerWidth, window.innerHeight * 0.6);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-        const light = new THREE.DirectionalLight(0xffffff, 2);
+        // Luce fisica per riflessi (Specifica 2)
+        const light = new THREE.PointLight(0xffffff, 2, 100);
         light.position.set(5, 5, 5);
         scene.add(light, new THREE.AmbientLight(0x222222));
 
         const geometry = new THREE.IcosahedronGeometry(1.5, 4);
         const material = new THREE.MeshStandardMaterial({ 
-            color: 0x222222, 
-            wireframe: true,
-            transparent: true,
-            opacity: 0.5
+            color: 0x222222, wireframe: true, metalness: 0.7, roughness: 0.2 
         });
         const planet = new THREE.Mesh(geometry, material);
         scene.add(planet);
         camera.position.z = 5;
 
-        // --- LOGICA DI INTERAZIONE (IL "PENSIERO") ---
-        const btnTap = document.getElementById('btn-tap');
+        // --- LOGICA DI INPUT (IL PENSIERO) ---
+        const btn = document.getElementById('main-trigger');
         const balUI = document.getElementById('balance');
-        const statusUI = document.getElementById('status-label');
+        const statusUI = document.getElementById('status-txt');
 
-        function handleTap() {
-            if (state.zoom < 1 || state.isCompleted) return;
+        function executeImpact() {
+            if (state.balance < 1 || state.isDone) return;
 
-            // Inizializza rarità al primo tap (RNG)
+            // Al primo tap l'AI decide il destino (RNG)
             if (!state.isCrafting) {
                 state.isCrafting = true;
-                const keys = Object.keys(tiers);
-                state.currentTier = tiers[keys[Math.floor(Math.random() * keys.length)]];
-                state.requiredTaps = state.currentTier.taps;
+                const rng = Math.random();
+                let cum = 0;
+                for(let key in tiers) {
+                    cum += tiers[key].chance;
+                    if(rng <= cum) { state.tier = tiers[key]; break; }
+                }
+                state.goal = state.tier.req;
             }
 
-            state.zoom--;
+            state.balance--;
             state.taps++;
-            balUI.innerText = state.zoom;
-            statusUI.innerText = `FORGING ${state.currentTier.name}: ${state.taps}/${state.requiredTaps}`;
+            balUI.innerText = Math.floor(state.balance);
+            statusUI.innerText = `FORGING ${state.tier.name}: ${state.taps}/${state.goal}`;
 
-            // Feedback 3D: Il pianeta si materializza
-            const progress = state.taps / state.requiredTaps;
-            planet.material.opacity = 0.5 + (progress * 0.5);
-            planet.rotation.y += 0.5;
+            // Feedback Visivo (Come nel video)
             gsap.fromTo(planet.scale, {x: 1.4, y: 1.4, z: 1.4}, {x: 1, y: 1, z: 1, duration: 0.2});
+            planet.rotation.y += 0.4;
+            
+            // Materializzazione progressiva
+            planet.material.opacity = 0.3 + (state.taps / state.goal * 0.7);
 
-            if (state.taps >= state.requiredTaps) finalizePlanet();
+            if (state.taps >= state.goal) finalize();
         }
 
-        function finalizePlanet() {
-            state.isCompleted = true;
-            btnTap.parentElement.style.display = "none";
-            document.getElementById('farm-widgets').style.display = "grid";
+        function finalize() {
+            state.isDone = true;
+            btn.style.display = "none";
+            document.getElementById('farm-ui').style.display = "grid";
             
-            // Applica estetica finale (Specifica 2)
+            // Evoluzione Finale
             planet.material.wireframe = false;
-            planet.material.color.setHex(state.currentTier.color);
-            document.getElementById('w-rate').innerText = `+${state.currentTier.rate}/H`;
+            planet.material.color.setHex(state.tier.color);
+            document.getElementById('rate-ui').innerText = `+${state.tier.rate}/H`;
+            statusUI.innerText = state.tier.name + " PLANET ONLINE";
+            statusUI.style.color = "#" + state.tier.color.toString(16);
+
+            gsap.to(planet.scale, {x: 2.2, y: 2.2, z: 2.2, duration: 1.2, ease: "elastic.out(1, 0.3)"});
             
-            gsap.to(planet.scale, {x: 2, y: 2, z: 2, duration: 1, ease: "elastic.out(1, 0.3)"});
-            
-            // Farming Logic (Specifica 3)
+            // Farming Loop (Specifica 3)
             setInterval(() => {
-                state.zoom += (state.currentTier.rate / 3600);
-                balUI.innerText = Math.floor(state.zoom);
+                state.balance += (state.tier.rate / 3600);
+                balUI.innerText = Math.floor(state.balance);
             }, 1000);
         }
 
-        // --- GESTIONE VISTE ---
-        function openView(view) {
-            document.getElementById('view-shop').style.display = "block";
-        }
-        function closeViews() {
-            document.getElementById('view-shop').style.display = "none";
-        }
-
-        function buySun() {
-            alert("Invia 10 TON a: UQCbU2lE4-xTcX2cjX75Uq4LQskpL-Xm71yLrA58QxytkgzS");
-        }
-
-        function burnPlanet() {
-            if(confirm("Bruciare il pianeta per il 15%?")) location.reload();
-        }
-
-        // Listeners
-        btnTap.addEventListener('touchstart', (e) => { e.preventDefault(); handleTap(); });
-        btnTap.addEventListener('mousedown', handleTap);
+        // Eventi
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); executeImpact(); });
+        btn.addEventListener('mousedown', executeImpact);
 
         function animate() {
             requestAnimationFrame(animate);
-            planet.rotation.y += 0.005;
+            planet.rotation.y += (state.isDone ? 0.005 : 0.002);
             renderer.render(scene, camera);
         }
         animate();
