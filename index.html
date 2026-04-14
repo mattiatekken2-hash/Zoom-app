@@ -3,150 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>ZOOM MASTER V.33 - DEFINITIVE</title>
+    <title>ZOOM MASTER V.35 - ACTIVE FARMING</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        :root { --neon: #00f2fe; --gold: #ffd700; --bg: #000; --card: rgba(15,15,15,0.95); }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; color: white; }
+        :root { --neon: #00f2fe; --gold: #ffd700; --epic: #b721ff; --rare: #4facfe; --bg: #000; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; color: white; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg); overflow: hidden; height: 100vh; }
 
-        /* HEADER & SEASON BAR (Specifica 5) */
-        #header { position: absolute; top: 0; width: 100%; padding: 25px; z-index: 100; pointer-events: none; }
-        .top-row { display: flex; justify-content: space-between; align-items: center; pointer-events: auto; }
-        .balance-box { background: var(--card); border: 1px solid var(--neon); padding: 10px 20px; border-radius: 30px; font-weight: 900; font-size: 20px; box-shadow: 0 0 15px rgba(0,242,254,0.2); }
+        #ui-header { position: absolute; top: 0; width: 100%; padding: 25px; z-index: 100; display: flex; justify-content: space-between; align-items: center; }
+        .bal-box { background: rgba(255,255,255,0.05); border: 1px solid var(--neon); padding: 12px 20px; border-radius: 30px; font-weight: 900; font-size: 22px; backdrop-filter: blur(10px); }
+
+        #stage-canvas { position: absolute; top: 0; width: 100%; height: 100%; z-index: 1; }
+
+        #ui-controls { position: absolute; bottom: 0; width: 100%; padding: 40px 25px 60px; z-index: 10; background: linear-gradient(0deg, #000 85%, transparent); display: flex; flex-direction: column; align-items: center; }
         
-        .season-container { width: 100%; margin-top: 15px; pointer-events: auto; }
-        .season-label { font-size: 9px; font-weight: 900; letter-spacing: 2px; color: #555; margin-bottom: 5px; }
-        .season-bar { width: 100%; height: 4px; background: #111; border-radius: 2px; overflow: hidden; }
-        .season-fill { width: 16.6%; height: 100%; background: var(--neon); box-shadow: 0 0 10px var(--neon); }
+        .status-msg { font-size: 10px; color: var(--neon); letter-spacing: 4px; font-weight: 900; margin-bottom: 25px; text-transform: uppercase; }
 
-        /* RANK WIDGETS (Specifica 5) */
-        #ranks { position: absolute; top: 120px; left: 25px; z-index: 50; display: flex; gap: 10px; }
-        .rank-tag { background: rgba(255,255,255,0.05); padding: 5px 12px; border-radius: 10px; font-size: 9px; font-weight: 800; border: 1px solid #222; }
+        .btn-craft { width: 100%; height: 90px; background: var(--neon); border: none; border-radius: 28px; color: #000; font-weight: 900; font-size: 26px; text-transform: uppercase; box-shadow: 0 0 30px rgba(0, 242, 254, 0.4); }
+        .btn-craft:active { transform: scale(0.95); }
 
-        /* 3D STAGE */
-        #stage { position: absolute; top: 0; width: 100%; height: 100%; z-index: 1; }
+        #widget-grid { display: none; width: 100%; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .w-item { background: rgba(20,20,20,0.9); border: 1px solid #222; padding: 20px 5px; border-radius: 25px; text-align: center; transition: 0.3s; }
+        .w-item.active-farm { border-color: var(--neon); box-shadow: 0 0 15px rgba(0, 242, 254, 0.2); }
+        .w-item span { font-size: 8px; color: #555; display: block; margin-bottom: 5px; font-weight: 800; }
+        .w-item b { font-size: 15px; }
 
-        /* UI BOTTOM */
-        #controls { position: absolute; bottom: 0; width: 100%; padding: 40px 25px 50px; z-index: 10; background: linear-gradient(0deg, #000 80%, transparent); display: flex; flex-direction: column; align-items: center; }
-        
-        .main-btn { 
-            width: 100%; height: 90px; background: var(--neon); border: none; border-radius: 25px; 
-            color: #000; font-weight: 900; font-size: 26px; text-transform: uppercase;
-            box-shadow: 0 0 35px rgba(0, 242, 254, 0.4); transition: 0.1s;
-        }
-        .main-btn:active { transform: scale(0.93) translateY(6px); }
-
-        #game-grid { display: none; width: 100%; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .btn-widget { background: var(--card); border: 1px solid #222; padding: 18px 5px; border-radius: 22px; text-align: center; }
-        .btn-widget span { font-size: 8px; color: #444; display: block; margin-bottom: 4px; font-weight: 900; }
-        .btn-widget b { font-size: 14px; }
-
-        /* WITHDRAW (Specifica 9) */
-        .withdraw-btn { margin-top: 20px; font-size: 10px; color: var(--gold); border: 1px solid var(--gold); padding: 8px 20px; border-radius: 15px; font-weight: 900; text-transform: uppercase; }
+        .rarity-pop { position: absolute; top: 130px; width: 100%; text-align: center; z-index: 50; font-weight: 900; font-size: 45px; display: none; text-shadow: 0 0 20px rgba(0,0,0,0.8); }
     </style>
 </head>
 <body>
 
-    <div id="header">
-        <div class="top-row">
-            <div style="font-weight: 900; font-size: 24px;">ZOOM.</div>
-            <div class="balance-box">🪐 <span id="bal">1100</span></div>
-        </div>
-        <div class="season-container">
-            <div class="season-label">SEASON 1 OF 6</div>
-            <div class="season-bar"><div class="season-fill"></div></div>
-        </div>
+    <div id="ui-header">
+        <div style="font-weight: 900; font-size: 26px;">ZOOM.</div>
+        <div class="bal-box">🪐 <span id="balance">1100</span></div>
     </div>
 
-    <div id="ranks">
-        <div class="rank-tag">WHALE: #1204</div>
-        <div class="rank-tag" style="color:var(--gold)">WEALTH: TOP 5%</div>
-    </div>
+    <div id="rarity-tag" class="rarity-pop"></div>
 
-    <div id="stage"></div>
+    <div id="stage-canvas"></div>
 
-    <div id="controls">
-        <div style="font-size: 10px; color: var(--neon); letter-spacing: 4px; margin-bottom: 20px; font-weight: 900;" id="status">LABORATORY READY</div>
+    <div id="ui-controls">
+        <div class="status-msg" id="msg">SYSTEM READY</div>
         
-        <button class="main-btn" id="tap-trigger">CRAFT</button>
+        <button class="btn-craft" id="craft-btn">CRAFT PLANET</button>
 
-        <div id="game-grid">
-            <div class="btn-widget"><span>FARMING</span><b id="rate-val">+0/H</b></div>
-            <div class="btn-widget" onclick="location.reload()"><span>BURN (15%)</span><b style="color:red">BURN</b></div>
-            <div class="btn-widget"><span>MARKET</span><b style="color:var(--gold)">SELL</b></div>
+        <div id="widget-grid">
+            <div class="w-item" id="farm-trigger" onclick="startFarming()">
+                <span>FARM</span><b id="rate-display">START</b>
+            </div>
+            <div class="w-item" onclick="location.reload()">
+                <span>BURN</span><b style="color:#ff3e3e">15%</b>
+            </div>
+            <div class="w-item">
+                <span>MARKET</span><b style="color:var(--gold)">SELL</b>
+            </div>
         </div>
-
-        <button class="withdraw-btn" onclick="alert('Withdraw available at end of Season 1. (Req: 10 TON Deposit)')">Withdraw</button>
-        <div style="font-size: 8px; color: #222; margin-top: 15px;">UQCbU2lE4-xTcX2cjX75Uq4LQskpL-Xm71yLrA58QxytkgzS</div>
     </div>
 
     <script>
-        let state = { bal: 1100, taps: 0, goal: 40, done: false };
+        const tiers = {
+            BASIC: { color: 0x888888, rate: 10, prob: 0.60 },
+            RARE:  { color: 0x4facfe, rate: 50, prob: 0.25 },
+            EPIC:  { color: 0xb721ff, rate: 180, prob: 0.10 },
+            GOLD:  { color: 0xffd700, rate: 800, prob: 0.05 }
+        };
+
+        let state = { bal: 1100, taps: 0, goal: 30, isDone: false, tier: null, isFarming: false };
 
         // --- 3D ENGINE ---
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        document.getElementById('stage').appendChild(renderer.domElement);
+        document.getElementById('stage-canvas').appendChild(renderer.domElement);
 
-        const sun = new THREE.DirectionalLight(0xffffff, 2);
-        sun.position.set(5, 5, 5);
-        scene.add(sun, new THREE.AmbientLight(0x111111));
+        const light = new THREE.PointLight(0xffffff, 2, 100);
+        light.position.set(5, 5, 5);
+        scene.add(light, new THREE.AmbientLight(0x111111));
 
-        const planetGeo = new THREE.SphereGeometry(1.6, 64, 64);
-        const planetMat = new THREE.MeshStandardMaterial({ 
-            color: 0x050505, metalness: 1, roughness: 0.1, wireframe: true,
-            emissive: 0x00f2fe, emissiveIntensity: 0.2
-        });
-        const planet = new THREE.Mesh(planetGeo, planetMat);
+        const planet = new THREE.Mesh(
+            new THREE.SphereGeometry(1.6, 64, 64),
+            new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 1, roughness: 0.1, wireframe: true, emissive: 0x00f2fe, emissiveIntensity: 0.1 })
+        );
         scene.add(planet);
-
         camera.position.z = 5;
 
-        // --- INPUT LOGIC ---
-        const btn = document.getElementById('tap-trigger');
-        const balUI = document.getElementById('bal');
-        const statusUI = document.getElementById('status');
+        // --- CORE LOGIC ---
+        const craftBtn = document.getElementById('craft-btn');
+        const balanceUI = document.getElementById('balance');
 
-        function trigger() {
-            if (state.done) return;
+        function handleTap() {
+            if(state.isDone) return;
             state.bal--;
             state.taps++;
-            balUI.innerText = state.bal;
-            statusUI.innerText = `FORGING: ${state.taps}/${state.goal}`;
+            balanceUI.innerText = state.bal;
+            document.getElementById('msg').innerText = `FORGING: ${state.taps}/${state.goal}`;
 
-            // Fisica d'impatto
-            gsap.fromTo(planet.scale, {x:1.4, y:1.4, z:1.4}, {x:1, y:1, z:1, duration: 0.2, ease: "back.out(2)"});
+            gsap.fromTo(planet.scale, {x:1.3, y:1.3, z:1.3}, {x:1, y:1, z:1, duration: 0.2});
             planet.rotation.y += 0.5;
-            planet.material.emissiveIntensity += 0.02;
 
-            if (state.taps >= state.goal) finalize();
+            if(state.taps >= state.goal) finalize();
         }
 
         function finalize() {
-            state.done = true;
-            btn.style.display = "none";
-            document.getElementById('game-grid').style.display = "grid";
+            state.isDone = true;
+            craftBtn.style.display = "none";
+            document.getElementById('widget-grid').style.display = "grid";
+
+            // RNG Rarità
+            const keys = Object.keys(tiers);
+            const rand = Math.random();
+            let cum = 0;
+            for(let k of keys) {
+                cum += tiers[k].prob;
+                if(rand <= cum) { state.tier = { name: k, ...tiers[k] }; break; }
+            }
+
+            // Visual Setup
             planet.material.wireframe = false;
-            planet.material.color.setHex(0x00f2fe);
-            planet.material.emissiveIntensity = 0.6;
-            document.getElementById('rate-val').innerText = "+25/H";
-            statusUI.innerText = "MINER ONLINE";
-            gsap.to(planet.scale, {x:2.1, y:2.1, z:2.1, duration: 1.5, ease: "elastic.out(1, 0.3)"});
+            planet.material.color.setHex(state.tier.color);
+            planet.material.emissive.setHex(state.tier.color);
+            planet.material.emissiveIntensity = 0.5;
+
+            const tag = document.getElementById('rarity-tag');
+            tag.innerText = state.tier.name;
+            tag.style.color = "#" + state.tier.color.toString(16);
+            tag.style.display = "block";
             
-            // Farming Loop
-            setInterval(() => { state.bal++; balUI.innerText = Math.floor(state.bal); }, 3600);
+            document.getElementById('msg').innerText = "PLANET CRAFTED";
+            gsap.to(planet.scale, {x:2, y:2, z:2, duration: 1.5, ease: "elastic.out(1, 0.3)"});
         }
 
-        btn.addEventListener('touchstart', (e) => { e.preventDefault(); trigger(); });
-        btn.addEventListener('mousedown', trigger);
+        function startFarming() {
+            if(state.isFarming || !state.tier) return;
+            
+            state.isFarming = true;
+            const farmW = document.getElementById('farm-trigger');
+            farmW.classList.add('active-farm');
+            document.getElementById('rate-display').innerText = `+${state.tier.rate}/H`;
+            document.getElementById('msg').innerText = "FARMING IN PROGRESS";
+
+            // Loop Produzione: Zoom / 3600 per avere il rate al secondo
+            setInterval(() => {
+                state.bal += (state.tier.rate / 3600);
+                balanceUI.innerText = Math.floor(state.bal);
+            }, 1000);
+        }
+
+        craftBtn.addEventListener('mousedown', handleTap);
+        craftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); handleTap(); });
 
         function animate() {
             requestAnimationFrame(animate);
-            planet.rotation.y += 0.005;
+            // Ruota più veloce se farma
+            planet.rotation.y += state.isFarming ? 0.02 : 0.005;
             renderer.render(scene, camera);
         }
         animate();
